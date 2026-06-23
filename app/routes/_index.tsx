@@ -149,7 +149,7 @@ export default function HomePage() {
         ))}
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-8 py-24">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-[1fr_auto] gap-8 lg:gap-16 items-center">
             {/* Left Content */}
             <motion.div
               initial="hidden"
@@ -211,7 +211,7 @@ export default function HomePage() {
               initial={{ opacity: 0, x: 60 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6, duration: 0.8, ease: [0.22, 1, 0.36, 1] as const }}
-              className="hidden lg:block relative w-full max-w-md h-[520px]"
+              className="hidden lg:block relative w-[300px] h-[520px]"
             >
               {/* Card 1 — Primary Product (top-right) */}
               {products[0] && (
