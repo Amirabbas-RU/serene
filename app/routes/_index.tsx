@@ -211,17 +211,16 @@ export default function HomePage() {
               initial={{ opacity: 0, x: 60 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6, duration: 0.8, ease: [0.22, 1, 0.36, 1] as const }}
-              className="hidden lg:flex flex-col gap-5 relative items-end"
+              className="hidden lg:block relative w-full max-w-md h-[520px]"
             >
-              {/* Card 1 — Primary Product */}
+              {/* Card 1 — Primary Product (top-right) */}
               {products[0] && (
                 <motion.a
                   href={`/products/${products[0].handle}`}
                   animate={{ y: [0, -6, 0] }}
                   transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                  className="group/card relative w-64 rounded-2xl overflow-hidden border border-white/[0.10] bg-white/[0.04] backdrop-blur-2xl hover:bg-white/[0.08] hover:border-white/[0.18] transition-all duration-500"
+                  className="group/card absolute top-4 right-0 w-60 rounded-2xl overflow-hidden border border-white/[0.10] bg-white/[0.04] backdrop-blur-2xl hover:bg-white/[0.08] hover:border-white/[0.18] transition-all duration-500 shadow-2xl shadow-black/20 z-20"
                 >
-                  {/* Product Image */}
                   <div className="aspect-[4/3] overflow-hidden">
                     {products[0].featuredImage ? (
                       <img
@@ -234,10 +233,8 @@ export default function HomePage() {
                         <span className="text-cream/20 font-heading text-2xl">{products[0].title[0]}</span>
                       </div>
                     )}
-                    {/* Hover shimmer overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-forest/40 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
                   </div>
-                  {/* Info */}
                   <div className="p-4">
                     {products[0].vendor && (
                       <p className="text-[10px] uppercase tracking-[0.2em] text-clay-light/80 mb-1">
@@ -257,13 +254,13 @@ export default function HomePage() {
                 </motion.a>
               )}
 
-              {/* Card 2 — Secondary Product */}
+              {/* Card 2 — Secondary Product (lower-left, overlaps card 1) */}
               {products[1] && (
                 <motion.a
                   href={`/products/${products[1].handle}`}
                   animate={{ y: [0, 6, 0] }}
                   transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
-                  className="group/card relative w-56 rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] backdrop-blur-2xl hover:bg-white/[0.06] hover:border-white/[0.14] transition-all duration-500 -mr-4"
+                  className="group/card absolute top-44 left-4 w-52 rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] backdrop-blur-2xl hover:bg-white/[0.06] hover:border-white/[0.14] transition-all duration-500 shadow-xl shadow-black/10 z-10"
                 >
                   <div className="aspect-[4/3] overflow-hidden">
                     {products[1].featuredImage ? (
@@ -292,15 +289,15 @@ export default function HomePage() {
                 </motion.a>
               )}
 
-              {/* Floating Trust Badge */}
+              {/* Floating Trust Badge (bottom right) */}
               <motion.div
-                animate={{ y: [0, -4, 0], opacity: [0.7, 1, 0.7] }}
+                animate={{ y: [0, -3, 0], opacity: [0.75, 1, 0.75] }}
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-                className="flex items-center gap-3 px-4 py-3 rounded-full border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl -mr-8"
+                className="absolute bottom-8 right-8 flex items-center gap-3 px-4 py-2.5 rounded-full border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl"
               >
                 <div className="flex -space-x-1.5">
                   {['bg-clay', 'bg-sage', 'bg-cream'].map((bg, i) => (
-                    <div key={i} className={`w-5 h-5 rounded-full ${bg} border border-white/20`} />
+                    <div key={i} className={`w-5 h-5 rounded-full ${bg} border border-white/15`} />
                   ))}
                 </div>
                 <span className="text-[11px] text-cream/60 font-medium tracking-wide">
