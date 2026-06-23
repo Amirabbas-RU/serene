@@ -5,10 +5,6 @@ import { Search, ShoppingBag, User, Menu, X } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { useCart } from '~/lib/cart-context';
 
-/**
- * HeaderMenu — named export for backward compatibility.
- * Returns null; menu rendering is handled inside Header itself.
- */
 export function HeaderMenu() {
   return null;
 }
@@ -18,6 +14,12 @@ const NAV_LINKS = [
   { label: 'Shop', href: '/collections/all' },
   { label: 'Collections', href: '/collections' },
   { label: 'About', href: '/pages/about' },
+];
+
+const MOBILE_SECONDARY = [
+  { label: 'Search', href: '/search', icon: Search },
+  { label: 'Account', href: '/account', icon: User },
+  { label: 'Cart', href: '/cart', icon: ShoppingBag, showBadge: true },
 ];
 
 export default function Header() {
@@ -30,31 +32,20 @@ export default function Header() {
   const toggleMobile = useCallback(() => setMobileOpen((prev) => !prev), []);
   const closeMobile = useCallback(() => setMobileOpen(false), []);
 
-  /* ── Close mobile drawer on route change ── */
   useEffect(() => {
     closeMobile();
   }, [location.pathname, closeMobile]);
 
-  /* ── Scroll listener — becomes more opaque on scroll ── */
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  /* ── Body scroll lock when mobile menu is open ── */
   useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
   return (
@@ -82,12 +73,14 @@ export default function Header() {
           <button
             onClick={toggleMobile}
             className={cn(
-              'lg:hidden p-2 rounded-lg transition-colors',
-              isHome ? 'hover:bg-white/10' : 'hover:bg-forest/5',
+              'lg:hidden -ml-2 p-2.5 rounded-xl transition-all duration-200',
+              isHome
+                ? 'text-white hover:bg-white/[0.12] active:bg-white/[0.18]'
+                : 'text-forest hover:bg-forest/[0.06] active:bg-forest/[0.10]',
             )}
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            <Menu className="w-6 h-6" />
           </button>
 
           {/* ── Logo ── */}
@@ -122,11 +115,11 @@ export default function Header() {
           </nav>
 
           {/* ── Right icons ── */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Link
               to="/search"
               className={cn(
-                'p-2 rounded-lg transition-colors',
+                'p-2.5 rounded-xl transition-colors',
                 isHome
                   ? 'text-white/70 hover:text-white hover:bg-white/10'
                   : 'text-forest/60 hover:text-forest hover:bg-forest/5',
@@ -138,7 +131,7 @@ export default function Header() {
             <Link
               to="/account"
               className={cn(
-                'p-2 rounded-lg transition-colors hidden sm:block',
+                'p-2.5 rounded-xl transition-colors hidden sm:flex',
                 isHome
                   ? 'text-white/70 hover:text-white hover:bg-white/10'
                   : 'text-forest/60 hover:text-forest hover:bg-forest/5',
@@ -150,7 +143,7 @@ export default function Header() {
             <Link
               to="/cart"
               className={cn(
-                'relative p-2 rounded-lg transition-colors',
+                'relative p-2.5 rounded-xl transition-colors',
                 isHome
                   ? 'text-white/70 hover:text-white hover:bg-white/10'
                   : 'text-forest/60 hover:text-forest hover:bg-forest/5',
@@ -159,7 +152,7 @@ export default function Header() {
             >
               <ShoppingBag className="w-5 h-5" />
               {totalQuantity > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-clay rounded-full">
+                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold text-white bg-clay rounded-full px-1">
                   {totalQuantity > 99 ? '99+' : totalQuantity}
                 </span>
               )}
@@ -168,7 +161,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* ── Decorative floating gradient border that fades on scroll ── */}
+      {/* ── Decorative border ── */}
       <div
         className={cn(
           'absolute bottom-0 left-0 right-0 h-px transition-opacity duration-500',
@@ -179,7 +172,9 @@ export default function Header() {
         )}
       />
 
-      {/* ── Mobile slide-out drawer ── */}
+      {/* ═══════════════════════════════════════
+          MOBILE MENU
+          ═══════════════════════════════════════ */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -189,36 +184,40 @@ export default function Header() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+              transition={{ duration: 0.25 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
               onClick={closeMobile}
             />
 
-            {/* Drawer panel */}
+            {/* Drawer */}
             <motion.div
               key="mobile-drawer"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 bottom-0 w-72 max-w-[85vw] bg-cream z-50 shadow-2xl lg:hidden flex flex-col"
+              transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+              className="fixed top-0 left-0 bottom-0 w-[280px] max-w-[85vw] bg-cream z-50 shadow-2xl lg:hidden flex flex-col"
             >
-              {/* Drawer header */}
-              <div className="flex items-center justify-between px-5 pt-6 pb-4 border-b border-cream-dark/30">
-                <Link to="/" onClick={closeMobile} className="text-xl font-heading font-bold text-forest tracking-wide">
+              {/* ── Header ── */}
+              <div className="shrink-0 flex items-center justify-between px-5 pt-5 pb-4 border-b border-cream-dark/20">
+                <Link
+                  to="/"
+                  onClick={closeMobile}
+                  className="text-xl font-heading font-bold text-forest"
+                >
                   SERENE
                 </Link>
                 <button
                   onClick={closeMobile}
-                  className="p-2 rounded-lg text-forest/50 hover:text-forest hover:bg-forest/5 transition-colors"
+                  className="p-2 -mr-2 rounded-lg text-forest/40 hover:text-forest hover:bg-forest/5 transition-colors"
                   aria-label="Close menu"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Nav items */}
-              <nav className="flex-1 overflow-y-auto py-3 px-3">
+              {/* ── Navigation ── */}
+              <nav className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-1">
                 {NAV_LINKS.map((link) => {
                   const isActive = location.pathname === link.href;
                   return (
@@ -227,10 +226,10 @@ export default function Header() {
                       to={link.href}
                       onClick={closeMobile}
                       className={cn(
-                        'flex items-center px-4 py-3.5 rounded-xl text-base font-medium transition-all duration-200 mb-0.5',
+                        'flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium transition-all duration-200',
                         isActive
                           ? 'bg-clay/10 text-clay-dark'
-                          : 'text-forest hover:text-forest hover:bg-forest/5',
+                          : 'text-forest/80 hover:text-forest hover:bg-forest/[0.04]',
                       )}
                     >
                       {link.label}
@@ -239,43 +238,30 @@ export default function Header() {
                 })}
 
                 {/* Divider */}
-                <div className="h-px bg-cream-dark/40 my-3 mx-4" />
+                <div className="h-px bg-cream-dark/30 my-3" />
 
                 {/* Secondary links */}
-                <Link
-                  to="/search"
-                  onClick={closeMobile}
-                  className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium text-forest/70 hover:text-forest hover:bg-forest/5 transition-all duration-200 mb-0.5"
-                >
-                  <Search className="w-5 h-5 text-forest/40" />
-                  Search
-                </Link>
-                <Link
-                  to="/account"
-                  onClick={closeMobile}
-                  className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium text-forest/70 hover:text-forest hover:bg-forest/5 transition-all duration-200 mb-0.5"
-                >
-                  <User className="w-5 h-5 text-forest/40" />
-                  Account
-                </Link>
-                <Link
-                  to="/cart"
-                  onClick={closeMobile}
-                  className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium text-forest/70 hover:text-forest hover:bg-forest/5 transition-all duration-200"
-                >
-                  <ShoppingBag className="w-5 h-5 text-forest/40" />
-                  Cart
-                  {totalQuantity > 0 && (
-                    <span className="ml-auto bg-clay text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                      {totalQuantity}
-                    </span>
-                  )}
-                </Link>
+                {MOBILE_SECONDARY.map((item) => (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    onClick={closeMobile}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-forest/70 hover:text-forest hover:bg-forest/[0.04] transition-all duration-200"
+                  >
+                    <item.icon className="w-5 h-5 text-forest/30" />
+                    {item.label}
+                    {item.showBadge && totalQuantity > 0 && (
+                      <span className="ml-auto bg-clay text-white text-xs font-bold min-w-[22px] h-[22px] flex items-center justify-center rounded-full px-1.5">
+                        {totalQuantity > 99 ? '99+' : totalQuantity}
+                      </span>
+                    )}
+                  </Link>
+                ))}
               </nav>
 
-              {/* Drawer footer */}
-              <div className="px-5 py-4 border-t border-cream-dark/30">
-                <p className="text-xs text-forest/40 text-center">
+              {/* ── Footer ── */}
+              <div className="shrink-0 px-5 py-4 border-t border-cream-dark/20">
+                <p className="text-[11px] text-forest/30 text-center tracking-wide">
                   &copy; {new Date().getFullYear()} SERENE
                 </p>
               </div>
