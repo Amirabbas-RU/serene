@@ -2,6 +2,7 @@ import {isbot} from 'isbot';
 import {renderToReadableStream} from 'react-dom/server';
 import type {AppLoadContext, EntryContext} from 'react-router';
 import {ServerRouter} from 'react-router';
+import {createElement} from 'react';
 
 export default async function handleRequest(
   request: Request,
@@ -11,7 +12,10 @@ export default async function handleRequest(
   _loadContext: AppLoadContext,
 ): Promise<Response> {
   const body = await renderToReadableStream(
-    <ServerRouter context={routerContext} url={request.url} />,
+    createElement(ServerRouter, {
+      context: routerContext,
+      url: request.url,
+    }),
     {
       signal: request.signal,
       onError(error: unknown) {

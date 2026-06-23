@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, ShoppingCart } from 'lucide-react';
+import { Heart, ShoppingCart, Check } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
+import { useCart } from '~/lib/cart-context';
+import type { CartItem } from '~/lib/cart-context';
 
 /* ─── Types ─── */
 
@@ -91,15 +93,44 @@ function getBadges(product: Product): Array<{ label: string; className: string }
   return badges;
 }
 
+/** Extract price as CartItem['price'] */
+function toCartPrice(price: string | number | ProductPrice | undefined): CartItem['price'] {
+  if (price == null) return { amount: '0.00', currencyCode: 'USD' };
+  if (typeof price === 'object' && 'amount' in price) {
+    return { amount: price.amount, currencyCode: price.currencyCode ?? 'USD' };
+  }
+  const amount = (typeof price === 'string' ? parseFloat(price) : (price as number)).toFixed(2);
+  return { amount, currencyCode: 'USD' };
+}
+
 /* ─── Component ─── */
 
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [wishlisted, setWishlisted] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
+  const { addItem } = useCart();
+
   const image = getFeaturedImage(product);
   const currentPrice = formatPrice(product.price);
   const comparePrice = product.compareAtPrice ? formatPrice(product.compareAtPrice) : null;
   const saleActive = isOnSale(product);
   const badges = getBadges(product);
+
+  const handleAddToCart = () => {
+    if (!product.available) return;
+    addItem({
+      variantId: product.id ?? `variant_${product.handle}`,
+      title: product.title,
+      handle: product.handle ?? '',
+      variantTitle: 'Default Title',
+      price: toCartPrice(product.price),
+      quantity: 1,
+      imageUrl: image?.url ?? null,
+      imageAlt: image?.altText ?? product.title,
+    });
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 1500);
+  };
 
   return (
     <motion.div
@@ -125,18 +156,17 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         )}
 
         {/* ───── Quick-view Overlay ───── */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[2px] opacity-0 transition-all duration-300 group-hover/card:opacity-100">
-          <Button
-            variant="outline-light"
-            size="sm"
-            className="translate-y-2 opacity-0 transition-all duration-300 group-hover/card:translate-y-0 group-hover/card:opacity-100"
-            onClick={() => {
-              /* Quick-view logic — wired by parent */
-            }}
-          >
+        <a
+          href={product.handle ? `/products/${product.handle}` : '#'}
+          className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[2px] opacity-0 transition-all duration-300 group-hover/card:opacity-100"
+          onClick={(e) => {
+            if (!product.handle) e.preventDefault();
+          }}
+        >
+          <span className="translate-y-2 opacity-0 transition-all duration-300 group-hover/card:translate-y-0 group-hover/card:opacity-100 px-5 py-2 rounded-full bg-white/90 text-forest text-sm font-medium backdrop-blur-sm">
             Quick View
-          </Button>
-        </div>
+          </span>
+        </a>
 
         {/* ───── Badges ───── */}
         {badges.length > 0 && (
@@ -162,7 +192,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           aria-pressed={wishlisted}
           onClick={() => setWishlisted((prev) => !prev)}
           className={cn(
-            'absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full opacity-0 shadow-sm backdrop-blur-sm transition-all duration-300 group-hover/card:opacity-100',
+            'absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full opacity-0 shadow-sm backdrop-blur-sm transition-all duration-300 group-hover/card:opacity-100 z-10',
             wishlisted
               ? 'bg-white/90 text-red-500'
               : 'bg-white/70 text-forest/60 hover:bg-white/90 hover:text-red-400',
@@ -213,13 +243,22 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           variant="primary"
           size="sm"
           className="w-full bg-clay text-white hover:bg-clay-dark"
-          disabled={!product.available}
-          onClick={() => {
-            /* Add-to-cart logic — wired by parent */
-          }}
+          disabled={!product.available || addedToCart}
+          onClick={handleAddToCart}
         >
-          <ShoppingCart className="h-4 w-4" />
-          {product.available ? 'Add to Cart' : 'Sold Out'}
+          {addedToCart ? (
+            <>
+              <Check className="h-4 w-4" />
+              Added
+            </>
+          ) : product.available ? (
+            <>
+              <ShoppingCart className="h-4 w-4" />
+              Add to Cart
+            </>
+          ) : (
+            'Sold Out'
+          )}
         </Button>
       </div>
     </motion.div>

@@ -9,3 +9,4 @@ node_modules
 .shopify
 .react-router
 .vite
+.vercel

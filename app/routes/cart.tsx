@@ -20,55 +20,25 @@ import {
   CardContent,
   CardFooter,
 } from '~/components/ui/card';
+import { useCart } from '~/lib/cart-context';
 
 // ──────────────────────────────────────────────
-// TYPES
+// LOADER (minimal — cart state lives in context)
 // ──────────────────────────────────────────────
 
-interface CartPrice {
-  amount: string;
-  currencyCode: string;
+export async function loader({}: LoaderFunctionArgs) {
+  return {};
 }
 
-interface CartImage {
-  url: string;
-  altText: string | null;
-  width: number;
-  height: number;
-}
+// ──────────────────────────────────────────────
+// HELPERS
+// ──────────────────────────────────────────────
 
-interface CartLineItem {
-  id: string;
-  quantity: number;
-  cost: {
-    totalAmount: CartPrice;
-    subtotalAmount: CartPrice;
-  };
-  merchandise: {
-    id: string;
-    title: string;
-    product: {
-      handle: string;
-      title: string;
-      vendor: string | null;
-    };
-    image: CartImage | null;
-    price: CartPrice;
-  };
-}
-
-interface CartData {
-  id: string;
-  checkoutUrl: string;
-  totalQuantity: number;
-  cost: {
-    subtotalAmount: CartPrice;
-    totalAmount: CartPrice;
-    totalTaxAmount: CartPrice;
-  };
-  lines: {
-    nodes: CartLineItem[];
-  };
+function formatPrice(amount: string, currency: string = 'USD'): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+  }).format(parseFloat(amount));
 }
 
 // ──────────────────────────────────────────────
@@ -90,49 +60,21 @@ const itemVariants = {
     y: 0,
     transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const },
   },
+  exit: {
+    opacity: 0,
+    x: -20,
+    transition: { duration: 0.25, ease: [0.42, 0, 1, 1] as const },
+  },
 };
-
-// ──────────────────────────────────────────────
-// LOADER
-// ──────────────────────────────────────────────
-
-export async function loader({}: LoaderFunctionArgs) {
-  // Cart loading is intentionally skipped for dev/demo — no real Shopify API
-  // calls that would fail. Returns null so the empty state is shown.
-  //
-  // Production pattern (using Hydrogen cart utilities):
-  //   import { createCartHandler } from '@shopify/hydrogen';
-  //   const storefront = getStorefrontClient();
-  //   const cartHandler = createCartHandler({
-  //     storefront,
-  //     getCartId: (request) => cookie.parse(request.headers.get('cookie') ?? '').cartId,
-  //     setCartId: () => {}, // set-cookie on mutations
-  //   });
-  //   const cart = await cartHandler.get();
-  //   return { cart: cart ?? null };
-  return { cart: null as CartData | null };
-}
-
-// ──────────────────────────────────────────────
-// HELPERS
-// ──────────────────────────────────────────────
-
-function formatPrice(amount: string, currency: string = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-  }).format(parseFloat(amount));
-}
 
 // ──────────────────────────────────────────────
 // PAGE COMPONENT
 // ──────────────────────────────────────────────
 
 export default function CartPage() {
-  const { cart } = useLoaderData<typeof loader>();
-  const items = cart?.lines?.nodes ?? [];
-  const isEmpty = !cart || items.length === 0;
-  const itemCount = cart?.totalQuantity ?? 0;
+  const {} = useLoaderData<typeof loader>();
+  const { items, totalQuantity, subtotal, updateQuantity, removeItem, clearCart } = useCart();
+  const isEmpty = items.length === 0;
 
   return (
     <div>
@@ -172,7 +114,7 @@ export default function CartPage() {
                 </h1>
                 {!isEmpty && (
                   <p className="text-cream/50 text-sm mt-2">
-                    {itemCount} {itemCount === 1 ? 'item' : 'items'} in your cart
+                    {totalQuantity} {totalQuantity === 1 ? 'item' : 'items'} in your cart
                   </p>
                 )}
               </div>
@@ -200,15 +142,24 @@ export default function CartPage() {
                 <h2 className="font-heading text-2xl text-forest">
                   Cart Items
                 </h2>
-                <Badge variant="secondary">{itemCount}</Badge>
+                <Badge variant="secondary">{totalQuantity}</Badge>
               </div>
-              <Link
-                to="/collections/all"
-                className="text-sm text-forest/50 hover:text-clay flex items-center gap-1 transition-colors"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Continue Shopping
-              </Link>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={clearCart}
+                  className="text-sm text-forest/40 hover:text-red-500 transition-colors"
+                >
+                  Clear Cart
+                </button>
+                <Link
+                  to="/collections/all"
+                  className="text-sm text-forest/50 hover:text-clay flex items-center gap-1 transition-colors"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Continue Shopping
+                </Link>
+              </div>
             </motion.div>
 
             {/* Two-column layout */}
@@ -222,33 +173,34 @@ export default function CartPage() {
                   viewport={{ once: true, margin: '-30px' }}
                   className="space-y-4"
                 >
-                  {items.map((line: CartLineItem) => {
-                    const product = line.merchandise.product;
-                    const image = line.merchandise.image;
-                    const lineTotal = line.cost.totalAmount;
-                    const unitPrice = line.merchandise.price;
+                  {items.map((item) => {
+                    const lineTotal = (
+                      parseFloat(item.price.amount) * item.quantity
+                    ).toFixed(2);
 
                     return (
                       <motion.div
-                        key={line.id}
+                        key={item.id}
                         variants={itemVariants}
+                        exit="exit"
+                        layout
                         className="group flex gap-4 p-4 rounded-xl bg-cream-light/80 border border-cream-dark/20 hover:border-cream-dark/40 hover:shadow-sm transition-all duration-200"
                       >
                         {/* Thumbnail */}
                         <Link
-                          to={`/products/${product.handle}`}
+                          to={`/products/${item.handle}`}
                           className="shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-forest/5"
                         >
-                          {image ? (
+                          {item.imageUrl ? (
                             <img
-                              src={image.url}
-                              alt={image.altText || product.title}
+                              src={item.imageUrl}
+                              alt={item.imageAlt ?? item.title}
                               className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cream-dark/40 to-forest/10">
                               <span className="font-heading text-forest/15 text-xl">
-                                {product.title?.[0] || 'P'}
+                                {item.title?.[0] || 'P'}
                               </span>
                             </div>
                           )}
@@ -259,25 +211,21 @@ export default function CartPage() {
                           <div className="flex items-start justify-between gap-2">
                             <div>
                               <Link
-                                to={`/products/${product.handle}`}
+                                to={`/products/${item.handle}`}
                                 className="font-medium text-forest text-sm hover:text-clay transition-colors line-clamp-1"
                               >
-                                {product.title}
+                                {item.title}
                               </Link>
-                              {product.vendor && (
-                                <p className="text-[11px] uppercase tracking-widest text-clay/70 mt-0.5">
-                                  {product.vendor}
+                              {item.variantTitle !== 'Default Title' && (
+                                <p className="text-forest/50 text-xs mt-1">
+                                  {item.variantTitle}
                                 </p>
                               )}
-                              <p className="text-forest/50 text-xs mt-1">
-                                {line.merchandise.title !== 'Default Title' &&
-                                  line.merchandise.title}
-                              </p>
                             </div>
 
                             {/* Line total */}
                             <p className="text-forest font-medium text-sm whitespace-nowrap shrink-0">
-                              {formatPrice(lineTotal.amount, lineTotal.currencyCode)}
+                              {formatPrice(lineTotal, item.price.currencyCode)}
                             </p>
                           </div>
 
@@ -286,19 +234,24 @@ export default function CartPage() {
                             <div className="flex items-center gap-1">
                               <button
                                 type="button"
-                                disabled
-                                className="w-8 h-8 rounded-lg border border-cream-dark/30 bg-cream-light text-forest/40 flex items-center justify-center transition-colors cursor-not-allowed"
+                                onClick={() =>
+                                  updateQuantity(item.id, item.quantity - 1)
+                                }
+                                disabled={item.quantity <= 1}
+                                className="w-8 h-8 rounded-lg border border-cream-dark/30 bg-cream-light text-forest/60 hover:text-forest hover:border-cream-dark/50 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                 aria-label="Decrease quantity"
                               >
                                 <Minus className="w-3.5 h-3.5" />
                               </button>
                               <span className="w-10 text-center text-sm font-medium text-forest tabular-nums">
-                                {line.quantity}
+                                {item.quantity}
                               </span>
                               <button
                                 type="button"
-                                disabled
-                                className="w-8 h-8 rounded-lg border border-cream-dark/30 bg-cream-light text-forest/40 flex items-center justify-center transition-colors cursor-not-allowed"
+                                onClick={() =>
+                                  updateQuantity(item.id, item.quantity + 1)
+                                }
+                                className="w-8 h-8 rounded-lg border border-cream-dark/30 bg-cream-light text-forest/60 hover:text-forest hover:border-cream-dark/50 flex items-center justify-center transition-colors"
                                 aria-label="Increase quantity"
                               >
                                 <Plus className="w-3.5 h-3.5" />
@@ -307,12 +260,12 @@ export default function CartPage() {
 
                             <div className="flex items-center gap-3">
                               <span className="text-xs text-forest/40">
-                                {formatPrice(unitPrice.amount, unitPrice.currencyCode)} ea
+                                {formatPrice(item.price.amount, item.price.currencyCode)} ea
                               </span>
                               <button
                                 type="button"
-                                disabled
-                                className="w-8 h-8 rounded-lg text-forest/30 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors cursor-not-allowed"
+                                onClick={() => removeItem(item.id)}
+                                className="w-8 h-8 rounded-lg text-forest/30 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors"
                                 aria-label="Remove item"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -347,12 +300,7 @@ export default function CartPage() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-forest/60">Subtotal</span>
                         <span className="text-forest font-medium">
-                          {cart?.cost?.subtotalAmount
-                            ? formatPrice(
-                                cart.cost.subtotalAmount.amount,
-                                cart.cost.subtotalAmount.currencyCode,
-                              )
-                            : formatPrice('0', 'USD')}
+                          {formatPrice(subtotal.amount, subtotal.currencyCode)}
                         </span>
                       </div>
 
@@ -369,12 +317,7 @@ export default function CartPage() {
                         <div className="flex items-center justify-between">
                           <span className="text-forest font-medium">Total</span>
                           <span className="font-heading text-xl text-forest">
-                            {cart?.cost?.totalAmount
-                              ? formatPrice(
-                                  cart.cost.totalAmount.amount,
-                                  cart.cost.totalAmount.currencyCode,
-                                )
-                              : formatPrice('0', 'USD')}
+                            {formatPrice(subtotal.amount, subtotal.currencyCode)}
                           </span>
                         </div>
                       </div>
@@ -384,7 +327,6 @@ export default function CartPage() {
                         variant="primary"
                         size="lg"
                         className="w-full rounded-xl"
-                        disabled
                       >
                         Proceed to Checkout
                         <ChevronRight className="w-4 h-4" />
@@ -499,19 +441,18 @@ export default function CartPage() {
             <h2 className="font-heading text-3xl md:text-4xl text-forest mb-4">
               Need Inspiration?
             </h2>
-            <p className="text-forest/60 max-w-md mx-auto mb-8 leading-relaxed">
-              Browse our full collection of thoughtfully designed pieces
-              crafted to bring serenity into your everyday life.
+            <p className="text-forest/60 max-w-md mx-auto mb-8">
+              Discover our latest arrivals and curated collections.
             </p>
-            <Button
-              variant="primary"
-              size="lg"
-              href="/collections/all"
-              className="rounded-full"
-            >
-              Explore All Products
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+            <div className="flex flex-wrap justify-center gap-4">
+              <Button variant="primary" size="lg" href="/collections/all" className="rounded-full">
+                Shop All Products
+                <ShoppingBag className="w-4 h-4" />
+              </Button>
+              <Button variant="secondary" size="lg" href="/collections" className="rounded-full">
+                Browse Collections
+              </Button>
+            </div>
           </motion.div>
         </div>
       </section>

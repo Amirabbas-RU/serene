@@ -1,6 +1,7 @@
 import {Links, Meta, Outlet, Scripts, ScrollRestoration} from 'react-router';
 import type {LinksFunction, MetaFunction} from 'react-router';
 
+import {CartProvider} from '~/lib/cart-context';
 import PageLayout from '~/components/PageLayout';
 import '~/styles/app.css';
 
@@ -39,9 +40,11 @@ export default function Root() {
         <Links />
       </head>
       <body>
-        <PageLayout>
-          <Outlet />
-        </PageLayout>
+        <CartProvider>
+          <PageLayout>
+            <Outlet />
+          </PageLayout>
+        </CartProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

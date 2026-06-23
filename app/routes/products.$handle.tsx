@@ -19,6 +19,7 @@ import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import { cn } from '~/lib/utils';
 import { getStorefrontClient } from '~/lib/storefront';
+import { useCart } from '~/lib/cart-context';
 
 /* ─── GraphQL Queries ─── */
 
@@ -485,6 +486,8 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [wishlisted, setWishlisted] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
+  const { addItem } = useCart();
 
   // Initialize selected options from first available variant
   const variants = product?.variants?.nodes ?? [];
@@ -719,14 +722,31 @@ export default function ProductDetailPage() {
                   variant="primary"
                   size="xl"
                   className="flex-1"
-                  disabled={!product.availableForSale || (matchingVariant ? !matchingVariant.availableForSale : false)}
+                  disabled={!product.availableForSale || (matchingVariant ? !matchingVariant.availableForSale : false) || addedToCart}
+                  onClick={() => {
+                    if (!matchingVariant) return;
+                    addItem({
+                      variantId: matchingVariant.id,
+                      title: product.title,
+                      handle: product.handle,
+                      variantTitle: matchingVariant.title,
+                      price: matchingVariant.price,
+                      quantity,
+                      imageUrl: product.featuredImage?.url ?? product.images?.nodes?.[0]?.url ?? null,
+                      imageAlt: product.featuredImage?.altText ?? product.title,
+                    });
+                    setAddedToCart(true);
+                    setTimeout(() => setAddedToCart(false), 1500);
+                  }}
                 >
                   <ShoppingBag className="h-5 w-5" />
                   {!product.availableForSale
                     ? 'Sold Out'
                     : matchingVariant && !matchingVariant.availableForSale
                       ? 'Unavailable'
-                      : 'Add to Cart'}
+                      : addedToCart
+                        ? '✓ Added!'
+                        : 'Add to Cart'}
                 </Button>
               </div>
 

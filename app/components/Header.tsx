@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ShoppingBag, User, Menu, X } from 'lucide-react';
 import { cn } from '~/lib/utils';
+import { useCart } from '~/lib/cart-context';
 
 /**
  * HeaderMenu — named export for backward compatibility.
@@ -24,6 +25,7 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const isHome = location.pathname === '/';
+  const { totalQuantity } = useCart();
 
   const toggleMobile = useCallback(() => setMobileOpen((prev) => !prev), []);
   const closeMobile = useCallback(() => setMobileOpen(false), []);
@@ -156,9 +158,11 @@ export default function Header() {
               aria-label="Cart"
             >
               <ShoppingBag className="w-5 h-5" />
-              <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-clay rounded-full">
-                0
-              </span>
+              {totalQuantity > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-clay rounded-full">
+                  {totalQuantity > 99 ? '99+' : totalQuantity}
+                </span>
+              )}
             </Link>
           </div>
         </div>

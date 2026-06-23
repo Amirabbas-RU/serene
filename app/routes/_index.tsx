@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Shield, Sparkles, Truck, ArrowRight, ChevronRight } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
+import ProductCard from '~/components/ProductCard';
 import { getStorefrontClient } from '~/lib/storefront';
 
 const HERO_QUERY = `#graphql
@@ -359,48 +360,21 @@ export default function HomePage() {
           {products.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {products.map((product: any, i: number) => (
-                <motion.a
+                <ProductCard
                   key={product.id}
-                  href={`/products/${product.handle}`}
-                  initial={{ opacity: 0, y: 28 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.06, duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }}
-                  className="group"
-                >
-                  <div className="aspect-[4/5] rounded-xl overflow-hidden bg-forest/5 mb-3 relative">
-                    {product.featuredImage ? (
-                      <img
-                        src={product.featuredImage.url}
-                        alt={product.featuredImage.altText || product.title}
-                        className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-cream-dark/40 to-forest/10 flex items-center justify-center">
-                        <span className="font-heading text-forest/20 text-3xl">{product.title[0]}</span>
-                      </div>
-                    )}
-                    {product.tags?.includes('sale') && (
-                      <span className="absolute top-3 left-3 bg-clay text-white text-[10px] font-medium px-2 py-1 rounded-full uppercase tracking-wider">
-                        Sale
-                      </span>
-                    )}
-                  </div>
-                  {product.vendor && (
-                    <p className="text-[11px] uppercase tracking-widest text-clay/70 mb-0.5">
-                      {product.vendor}
-                    </p>
-                  )}
-                  <h3 className="font-medium text-forest text-sm line-clamp-2 group-hover:text-clay transition-colors">
-                    {product.title}
-                  </h3>
-                  <p className="text-forest/60 text-sm mt-1">
-                    {new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: product.priceRange.minVariantPrice.currencyCode,
-                    }).format(parseFloat(product.priceRange.minVariantPrice.amount))}
-                  </p>
-                </motion.a>
+                  product={{
+                    id: product.id,
+                    title: product.title,
+                    handle: product.handle,
+                    vendor: product.vendor,
+                    price: product.priceRange.minVariantPrice,
+                    compareAtPrice: product.compareAtPriceRange?.minVariantPrice ?? null,
+                    featuredImage: product.featuredImage,
+                    tags: product.tags,
+                    available: product.availableForSale,
+                  }}
+                  index={i}
+                />
               ))}
             </div>
           ) : (
