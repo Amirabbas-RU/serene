@@ -6,6 +6,8 @@ import PageLayout from '~/components/PageLayout';
 import '~/styles/app.css';
 
 export const links: LinksFunction = () => [
+  { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+  { rel: 'apple-touch-icon', href: '/favicon.svg' },
   {
     rel: 'preconnect',
     href: 'https://fonts.googleapis.com',
@@ -22,12 +24,17 @@ export const links: LinksFunction = () => [
 ];
 
 export const meta: MetaFunction = () => [
-  {title: 'SERENE — Timeless Home & Body'},
+  { title: 'SERENE — Timeless Home & Body' },
   {
     name: 'description',
     content:
       'Handcrafted goods for a calmer home — soy candles, linens, and ceramic vessels made with intention.',
   },
+  { name: 'theme-color', content: '#1a3a30' },
+  { property: 'og:title', content: 'SERENE — Timeless Home & Body' },
+  { property: 'og:description', content: 'Handcrafted goods for a calmer home — thoughtfully designed, ethically made, built to last.' },
+  { property: 'og:type', content: 'website' },
+  { name: 'twitter:card', content: 'summary' },
 ];
 
 export default function Root() {
