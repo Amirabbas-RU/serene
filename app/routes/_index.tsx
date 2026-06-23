@@ -206,35 +206,106 @@ export default function HomePage() {
               </motion.div>
             </motion.div>
 
-            {/* Right: Floating Showcase Cards */}
+            {/* Right: Floating Product Showcase */}
             <motion.div
               initial={{ opacity: 0, x: 60 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6, duration: 0.8, ease: [0.22, 1, 0.36, 1] as const }}
-              className="hidden lg:flex flex-col gap-6 relative"
+              className="hidden lg:flex flex-col gap-5 relative items-end"
             >
-              <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                className="glass-dark rounded-2xl p-6 border border-white/10 backdrop-blur-xl max-w-sm ml-auto"
-              >
-                <div className="aspect-[4/3] bg-gradient-to-br from-clay/20 to-forest-light/20 rounded-xl mb-4 flex items-center justify-center">
-                  <span className="text-clay-light/60 font-heading text-lg">New Arrival</span>
-                </div>
-                <p className="font-heading text-white text-sm">Linen Collection</p>
-                <p className="text-clay-light text-xs mt-1">$89 — $220</p>
-              </motion.div>
+              {/* Card 1 — Primary Product */}
+              {products[0] && (
+                <motion.a
+                  href={`/products/${products[0].handle}`}
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                  className="group/card relative w-64 rounded-2xl overflow-hidden border border-white/[0.10] bg-white/[0.04] backdrop-blur-2xl hover:bg-white/[0.08] hover:border-white/[0.18] transition-all duration-500"
+                >
+                  {/* Product Image */}
+                  <div className="aspect-[4/3] overflow-hidden">
+                    {products[0].featuredImage ? (
+                      <img
+                        src={products[0].featuredImage.url}
+                        alt={products[0].featuredImage.altText || products[0].title}
+                        className="w-full h-full object-cover transition duration-700 group-hover/card:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-clay/20 to-forest-light/20 flex items-center justify-center">
+                        <span className="text-cream/20 font-heading text-2xl">{products[0].title[0]}</span>
+                      </div>
+                    )}
+                    {/* Hover shimmer overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-forest/40 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
+                  </div>
+                  {/* Info */}
+                  <div className="p-4">
+                    {products[0].vendor && (
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-clay-light/80 mb-1">
+                        {products[0].vendor}
+                      </p>
+                    )}
+                    <h3 className="font-heading text-sm text-white leading-tight group-hover/card:text-clay-light transition-colors duration-300">
+                      {products[0].title}
+                    </h3>
+                    <p className="text-xs text-cream/50 mt-1.5 font-medium">
+                      {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: products[0].priceRange.minVariantPrice.currencyCode,
+                      }).format(parseFloat(products[0].priceRange.minVariantPrice.amount))}
+                    </p>
+                  </div>
+                </motion.a>
+              )}
 
+              {/* Card 2 — Secondary Product */}
+              {products[1] && (
+                <motion.a
+                  href={`/products/${products[1].handle}`}
+                  animate={{ y: [0, 6, 0] }}
+                  transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
+                  className="group/card relative w-56 rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] backdrop-blur-2xl hover:bg-white/[0.06] hover:border-white/[0.14] transition-all duration-500 -mr-4"
+                >
+                  <div className="aspect-[4/3] overflow-hidden">
+                    {products[1].featuredImage ? (
+                      <img
+                        src={products[1].featuredImage.url}
+                        alt={products[1].featuredImage.altText || products[1].title}
+                        className="w-full h-full object-cover transition duration-700 group-hover/card:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-sage/20 to-clay/20 flex items-center justify-center">
+                        <span className="text-cream/20 font-heading text-2xl">{products[1].title[0]}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3.5">
+                    <h3 className="font-heading text-sm text-white leading-tight group-hover/card:text-clay-light transition-colors duration-300">
+                      {products[1].title}
+                    </h3>
+                    <p className="text-xs text-cream/50 mt-1 font-medium">
+                      {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: products[1].priceRange.minVariantPrice.currencyCode,
+                      }).format(parseFloat(products[1].priceRange.minVariantPrice.amount))}
+                    </p>
+                  </div>
+                </motion.a>
+              )}
+
+              {/* Floating Trust Badge */}
               <motion.div
-                animate={{ y: [0, 8, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                className="glass-dark rounded-2xl p-6 border border-white/10 backdrop-blur-xl max-w-sm mr-auto -mt-4"
+                animate={{ y: [0, -4, 0], opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+                className="flex items-center gap-3 px-4 py-3 rounded-full border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl -mr-8"
               >
-                <div className="aspect-[4/3] bg-gradient-to-br from-sage/20 to-clay/20 rounded-xl mb-4 flex items-center justify-center">
-                  <span className="text-clay-light/60 font-heading text-lg">Best Seller</span>
+                <div className="flex -space-x-1.5">
+                  {['bg-clay', 'bg-sage', 'bg-cream'].map((bg, i) => (
+                    <div key={i} className={`w-5 h-5 rounded-full ${bg} border border-white/20`} />
+                  ))}
                 </div>
-                <p className="font-heading text-white text-sm">Ceramic Set</p>
-                <p className="text-clay-light text-xs mt-1">$145 — $320</p>
+                <span className="text-[11px] text-cream/60 font-medium tracking-wide">
+                  2,400+ Happy Customers
+                </span>
               </motion.div>
             </motion.div>
           </div>
