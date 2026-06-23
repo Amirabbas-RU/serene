@@ -129,10 +129,11 @@ export default function Footer() {
               />
               <Button
                 variant="primary"
-                size="icon"
+                size="default"
                 type="submit"
                 aria-label="Subscribe"
               >
+                Subscribe
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </form>
