@@ -190,7 +190,7 @@ export default function Header() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
               onClick={closeMobile}
             />
 
@@ -201,45 +201,83 @@ export default function Header() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 bottom-0 w-72 bg-cream/95 backdrop-blur-2xl z-50 shadow-2xl lg:hidden"
+              className="fixed top-0 left-0 bottom-0 w-72 max-w-[85vw] bg-cream z-50 shadow-2xl lg:hidden flex flex-col"
             >
-              <div className="p-6 pt-20">
-                <nav className="flex flex-col gap-1">
-                  {NAV_LINKS.map((link) => (
+              {/* Drawer header */}
+              <div className="flex items-center justify-between px-5 pt-6 pb-4 border-b border-cream-dark/30">
+                <Link to="/" onClick={closeMobile} className="text-xl font-heading font-bold text-forest tracking-wide">
+                  SERENE
+                </Link>
+                <button
+                  onClick={closeMobile}
+                  className="p-2 rounded-lg text-forest/50 hover:text-forest hover:bg-forest/5 transition-colors"
+                  aria-label="Close menu"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Nav items */}
+              <nav className="flex-1 overflow-y-auto py-3 px-3">
+                {NAV_LINKS.map((link) => {
+                  const isActive = location.pathname === link.href;
+                  return (
                     <Link
                       key={link.href}
                       to={link.href}
                       onClick={closeMobile}
-                      className="px-4 py-3 text-forest/80 hover:text-forest hover:bg-forest/5 rounded-lg transition-colors text-sm font-medium"
+                      className={cn(
+                        'flex items-center px-4 py-3.5 rounded-xl text-base font-medium transition-all duration-200 mb-0.5',
+                        isActive
+                          ? 'bg-clay/10 text-clay-dark'
+                          : 'text-forest hover:text-forest hover:bg-forest/5',
+                      )}
                     >
                       {link.label}
                     </Link>
-                  ))}
-                  <Link
-                    to="/search"
-                    onClick={closeMobile}
-                    className="flex items-center gap-3 px-4 py-3 text-forest/80 hover:text-forest hover:bg-forest/5 rounded-lg transition-colors text-sm font-medium"
-                  >
-                    <Search className="w-4 h-4" />
-                    Search
-                  </Link>
-                  <Link
-                    to="/account"
-                    onClick={closeMobile}
-                    className="flex items-center gap-3 px-4 py-3 text-forest/80 hover:text-forest hover:bg-forest/5 rounded-lg transition-colors text-sm font-medium"
-                  >
-                    <User className="w-4 h-4" />
-                    Account
-                  </Link>
-                  <Link
-                    to="/cart"
-                    onClick={closeMobile}
-                    className="flex items-center gap-3 px-4 py-3 text-forest/80 hover:text-forest hover:bg-forest/5 rounded-lg transition-colors text-sm font-medium"
-                  >
-                    <ShoppingBag className="w-4 h-4" />
-                    Cart
-                  </Link>
-                </nav>
+                  );
+                })}
+
+                {/* Divider */}
+                <div className="h-px bg-cream-dark/40 my-3 mx-4" />
+
+                {/* Secondary links */}
+                <Link
+                  to="/search"
+                  onClick={closeMobile}
+                  className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium text-forest/70 hover:text-forest hover:bg-forest/5 transition-all duration-200 mb-0.5"
+                >
+                  <Search className="w-5 h-5 text-forest/40" />
+                  Search
+                </Link>
+                <Link
+                  to="/account"
+                  onClick={closeMobile}
+                  className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium text-forest/70 hover:text-forest hover:bg-forest/5 transition-all duration-200 mb-0.5"
+                >
+                  <User className="w-5 h-5 text-forest/40" />
+                  Account
+                </Link>
+                <Link
+                  to="/cart"
+                  onClick={closeMobile}
+                  className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium text-forest/70 hover:text-forest hover:bg-forest/5 transition-all duration-200"
+                >
+                  <ShoppingBag className="w-5 h-5 text-forest/40" />
+                  Cart
+                  {totalQuantity > 0 && (
+                    <span className="ml-auto bg-clay text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                      {totalQuantity}
+                    </span>
+                  )}
+                </Link>
+              </nav>
+
+              {/* Drawer footer */}
+              <div className="px-5 py-4 border-t border-cream-dark/30">
+                <p className="text-xs text-forest/40 text-center">
+                  &copy; {new Date().getFullYear()} SERENE
+                </p>
               </div>
             </motion.div>
           </>
