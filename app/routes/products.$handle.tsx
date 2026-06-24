@@ -721,12 +721,14 @@ export default function ProductDetailPage() {
               )}
 
               {/* Quantity + Add to Cart */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
-                <QuantitySelector quantity={quantity} onChange={setQuantity} />
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-2">
+                <div className="flex justify-center sm:justify-start">
+                  <QuantitySelector quantity={quantity} onChange={setQuantity} />
+                </div>
                 <Button
                   variant="primary"
                   size="xl"
-                  className="flex-1"
+                  className="flex-1 h-12 sm:h-14 px-6 sm:px-10 text-base sm:text-lg"
                   disabled={!product.availableForSale || (matchingVariant ? !matchingVariant.availableForSale : false) || addedToCart}
                   onClick={() => {
                     if (!matchingVariant) return;
