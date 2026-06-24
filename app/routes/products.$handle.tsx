@@ -536,7 +536,7 @@ export default function ProductDetailPage() {
     ? matchingVariant.price
     : product?.priceRange?.minVariantPrice ?? null;
   const compareAtPrice = product?.compareAtPriceRange?.minVariantPrice ?? null;
-  const saleActive = isOnSale(product as Product);
+  const saleActive = product ? isOnSale(product) : false;
   const badges = product ? getBadges(product) : [];
   const productImages = product?.images?.nodes ?? [];
   const imagesExist = productImages.length > 0 || product?.featuredImage;
