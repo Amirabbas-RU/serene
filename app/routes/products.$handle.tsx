@@ -407,7 +407,7 @@ function VariantPicker({
                   type="button"
                   onClick={() => onChange(optionName, value)}
                   className={cn(
-                    'px-4 py-2 rounded-full text-sm font-medium transition-all duration-200',
+                    'px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all duration-200',
                     isSelected
                       ? 'bg-forest text-cream shadow-sm'
                       : 'bg-cream-dark/40 text-forest/70 hover:bg-cream-dark/70 border border-forest/10',
@@ -590,13 +590,13 @@ export default function ProductDetailPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="lg:hidden mb-2"
+            className="lg:hidden mb-3"
           >
             <Link
               to="/collections/all"
-              className="inline-flex items-center gap-1 text-xs text-clay/70 hover:text-clay transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-forest/60 hover:text-clay transition-colors py-1"
             >
-              <ChevronLeft className="w-3.5 h-3.5" />
+              <ChevronLeft className="w-4 h-4" />
               Back to Collections
             </Link>
           </motion.div>
@@ -625,7 +625,7 @@ export default function ProductDetailPage() {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as const }}
-              className="flex flex-col gap-6"
+              className="flex flex-col gap-4 sm:gap-6"
             >
               {/* Vendor */}
               {product.vendor && (
@@ -756,7 +756,7 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Trust Signals */}
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 pt-2">
                 <div className="flex items-center gap-3 rounded-xl bg-cream-dark/30 px-4 py-3">
                   <Truck className="h-4 w-4 text-clay shrink-0" />
                   <div>
