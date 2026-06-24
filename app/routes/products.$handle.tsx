@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import type { LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, Link } from 'react-router';
 import { motion } from 'framer-motion';
@@ -327,7 +327,7 @@ function ImageGallery({
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
-        className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-cream-dark/40"
+        className="relative aspect-[3/4] sm:aspect-[4/5] rounded-2xl overflow-hidden bg-cream-dark/40"
       >
         {currentImage ? (
           <img
@@ -491,7 +491,9 @@ export default function ProductDetailPage() {
 
   // Initialize selected options from first available variant
   const variants = product?.variants?.nodes ?? [];
-  useMemo(() => {
+  const optionsInitialized = useRef(false);
+  useEffect(() => {
+    if (optionsInitialized.current) return;
     if (variants.length > 0 && Object.keys(selectedOptions).length === 0) {
       const initial: Record<string, string> = {};
       for (const variant of variants) {
@@ -508,9 +510,12 @@ export default function ProductDetailPage() {
           initial[opt.name] = opt.value;
         }
       }
-      setSelectedOptions(initial);
+      if (Object.keys(initial).length > 0) {
+        setSelectedOptions(initial);
+        optionsInitialized.current = true;
+      }
     }
-  }, [variants]);
+  }, [variants, selectedOptions]);
 
   const handleOptionChange = (name: string, value: string) => {
     setSelectedOptions((prev) => ({ ...prev, [name]: value }));
@@ -531,7 +536,7 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen bg-cream">
         {/* Page header */}
-        <section className="pt-32 pb-16 px-6 bg-gradient-to-b from-cream-dark/30 to-cream">
+        <section className="pt-24 sm:pt-32 pb-16 px-4 sm:px-6 bg-gradient-to-b from-cream-dark/30 to-cream">
           <div className="max-w-7xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 24 }}
@@ -539,7 +544,7 @@ export default function ProductDetailPage() {
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as const }}
             >
               <Badge variant="secondary" className="mb-4">Oops</Badge>
-              <h1 className="font-heading text-5xl md:text-6xl text-forest mb-4">
+              <h1 className="font-heading text-3xl sm:text-4xl md:text-6xl text-forest mb-4">
                 Product Not Found
               </h1>
               <p className="text-forest/60 max-w-xl text-lg leading-relaxed mb-8">
@@ -559,7 +564,7 @@ export default function ProductDetailPage() {
   return (
     <div className="bg-cream min-h-screen">
       {/* ─── Page Header / Breadcrumb ─── */}
-      <section className="pt-28 pb-8 px-6 bg-gradient-to-b from-cream-dark/20 to-cream">
+      <section className="pt-24 sm:pt-28 pb-6 sm:pb-8 px-4 sm:px-6 bg-gradient-to-b from-cream-dark/20 to-cream">
         <div className="max-w-7xl mx-auto">
           <motion.nav
             initial={{ opacity: 0, y: 8 }}
@@ -599,7 +604,7 @@ export default function ProductDetailPage() {
       </section>
 
       {/* ─── Main Product Content ─── */}
-      <section className="px-6 pb-16">
+      <section className="px-4 sm:px-6 pb-12 sm:pb-16">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
             {/* ── LEFT: Image Gallery ── */}
@@ -631,7 +636,7 @@ export default function ProductDetailPage() {
 
               {/* Title + Wishlist/Share actions */}
               <div className="flex items-start justify-between gap-4">
-                <h1 className="font-heading text-4xl md:text-5xl text-forest leading-tight">
+                <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl text-forest leading-tight">
                   {product.title}
                 </h1>
                 <div className="flex items-center gap-1 shrink-0 pt-1">
@@ -663,7 +668,7 @@ export default function ProductDetailPage() {
 
               {/* Price */}
               <div className="flex items-center gap-3">
-                <span className="font-heading text-3xl text-forest">
+                <span className="font-heading text-2xl sm:text-3xl text-forest">
                   {currentPrice
                     ? formatPrice(currentPrice.amount, currentPrice.currencyCode)
                     : '-'}
@@ -697,7 +702,7 @@ export default function ProductDetailPage() {
               {/* Description */}
               {product.descriptionHtml ? (
                 <div
-                  className="text-forest/60 leading-relaxed text-sm prose-a:text-clay prose-a:underline"
+                  className="text-forest/60 leading-relaxed text-sm max-w-full overflow-hidden [&_table]:block [&_table]:overflow-x-auto [&_img]:max-w-full [&_img]:h-auto [&_*]:max-w-full prose-a:text-clay prose-a:underline"
                   dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
                 />
               ) : product.description ? (
@@ -751,7 +756,7 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Trust Signals */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 pt-2">
                 <div className="flex items-center gap-3 rounded-xl bg-cream-dark/30 px-4 py-3">
                   <Truck className="h-4 w-4 text-clay shrink-0" />
                   <div>
@@ -781,7 +786,7 @@ export default function ProductDetailPage() {
 
       {/* ─── Related Products ─── */}
       {relatedProducts.length > 0 && (
-        <section className="py-20 px-6 bg-cream-dark/20">
+        <section className="py-16 sm:py-20 px-4 sm:px-6 bg-cream-dark/20">
           <div className="max-w-7xl mx-auto">
             <motion.div
               {...fadeUp}
@@ -791,7 +796,7 @@ export default function ProductDetailPage() {
                 <Badge variant="secondary" className="mb-4">
                   You May Also Like
                 </Badge>
-                <h2 className="font-heading text-3xl md:text-4xl text-forest">
+                <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl text-forest">
                   Related Products
                 </h2>
               </div>
@@ -863,7 +868,7 @@ export default function ProductDetailPage() {
       )}
 
       {/* ─── Bottom CTA ─── */}
-      <section className="py-20 px-6 bg-gradient-to-t from-cream-dark/30 to-cream">
+      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-gradient-to-t from-cream-dark/30 to-cream">
         <div className="max-w-7xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -871,7 +876,7 @@ export default function ProductDetailPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }}
           >
-            <h2 className="font-heading text-3xl md:text-4xl text-forest mb-4">
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl text-forest mb-4">
               Complete Your Look
             </h2>
             <p className="text-forest/60 max-w-md mx-auto mb-8 leading-relaxed">
