@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ShoppingBag, User, Menu, X } from 'lucide-react';
@@ -23,19 +22,21 @@ const MOBILE_SECONDARY = [
   { label: 'Cart', href: '/cart', icon: ShoppingBag, showBadge: true },
 ];
 
-export default function Header() {
+interface HeaderProps {
+  mobileOpen: boolean;
+  onToggleMobile: () => void;
+  onCloseMobile: () => void;
+}
+
+export default function Header({ mobileOpen, onToggleMobile, onCloseMobile }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const isHome = location.pathname === '/';
   const { totalQuantity } = useCart();
 
-  const toggleMobile = useCallback(() => setMobileOpen((prev) => !prev), []);
-  const closeMobile = useCallback(() => setMobileOpen(false), []);
-
   useEffect(() => {
-    closeMobile();
-  }, [location.pathname, closeMobile]);
+    onCloseMobile();
+  }, [location.pathname, onCloseMobile]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -43,11 +44,6 @@ export default function Header() {
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  useEffect(() => {
-    document.body.style.overflow = mobileOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [mobileOpen]);
 
   return (
     <header
@@ -72,7 +68,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* ── Mobile hamburger ── */}
           <button
-            onClick={toggleMobile}
+            onClick={onToggleMobile}
             className={cn(
               'lg:hidden -ml-2 p-2.5 rounded-xl transition-all duration-200',
               isHome
@@ -172,111 +168,126 @@ export default function Header() {
             : 'bg-gradient-to-r from-transparent via-forest/20 to-transparent',
         )}
       />
-
-      {/* ═══════════════════════════════════════
-          MOBILE MENU — rendered via portal to
-          avoid backdrop-filter containing-block bug.
-          Guarded for SSR: document is undefined on server.
-          ═══════════════════════════════════════ */}
-      {typeof document !== 'undefined'
-        ? createPortal(
-            <AnimatePresence>
-              {mobileOpen && (
-                <>
-                  {/* Backdrop */}
-                  <motion.div
-                    key="mobile-backdrop"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-                    onClick={closeMobile}
-                  />
-
-                  {/* Drawer */}
-                  <motion.div
-                    key="mobile-drawer"
-                    initial={{ x: '-100%' }}
-                    animate={{ x: 0 }}
-                    exit={{ x: '-100%' }}
-                    transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                    className="fixed top-0 left-0 bottom-0 w-[280px] max-w-[85vw] bg-cream z-50 shadow-2xl lg:hidden flex flex-col"
-                  >
-                    {/* ── Header ── */}
-                    <div className="shrink-0 flex items-center justify-between px-5 pt-5 pb-4 border-b border-cream-dark/20">
-                      <Link
-                        to="/"
-                        onClick={closeMobile}
-                        className="text-xl font-heading font-bold text-forest"
-                      >
-                        SERENE
-                      </Link>
-                      <button
-                        onClick={closeMobile}
-                        className="p-2 -mr-2 rounded-lg text-forest/40 hover:text-forest hover:bg-forest/5 transition-colors"
-                        aria-label="Close menu"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-
-                    {/* ── Navigation ── */}
-                    <nav className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-1">
-                      {NAV_LINKS.map((link) => {
-                        const isActive = location.pathname === link.href;
-                        return (
-                          <Link
-                            key={link.href}
-                            to={link.href}
-                            onClick={closeMobile}
-                            className={cn(
-                              'flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium transition-all duration-200',
-                              isActive
-                                ? 'bg-clay/10 text-clay-dark'
-                                : 'text-forest/80 hover:text-forest hover:bg-forest/[0.04]',
-                            )}
-                          >
-                            {link.label}
-                          </Link>
-                        );
-                      })}
-
-                      {/* Divider */}
-                      <div className="h-px bg-cream-dark/30 my-3" />
-
-                      {/* Secondary links */}
-                      {MOBILE_SECONDARY.map((item) => (
-                        <Link
-                          key={item.href}
-                          to={item.href}
-                          onClick={closeMobile}
-                          className="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-forest/70 hover:text-forest hover:bg-forest/[0.04] transition-all duration-200"
-                        >
-                          <item.icon className="w-5 h-5 text-forest/30" />
-                          {item.label}
-                          {item.showBadge && totalQuantity > 0 && (
-                            <span className="ml-auto bg-clay text-white text-xs font-bold min-w-[22px] h-[22px] flex items-center justify-center rounded-full px-1.5">
-                              {totalQuantity > 99 ? '99+' : totalQuantity}
-                            </span>
-                          )}
-                        </Link>
-                      ))}
-                    </nav>
-
-                    {/* ── Footer ── */}
-                    <div className="shrink-0 px-5 py-4 border-t border-cream-dark/20">
-                      <p className="text-[11px] text-forest/30 text-center tracking-wide">
-                        &copy; {new Date().getFullYear()} SERENE
-                      </p>
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>,
-            document.body,
-          )
-        : null}
     </header>
+  );
+}
+
+/* ═══════════════════════════════════════
+   MOBILE MENU — rendered as a separate
+   component outside the header to avoid
+   any stacking context / containing-block
+   issues from backdrop-filter.
+   ═══════════════════════════════════════ */
+
+export function MobileMenu({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const location = useLocation();
+  const { totalQuantity } = useCart();
+
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            key="mobile-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+            onClick={onClose}
+          />
+
+          {/* Drawer */}
+          <motion.div
+            key="mobile-drawer"
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+            className="fixed top-0 left-0 bottom-0 w-[280px] max-w-[85vw] bg-cream z-50 shadow-2xl lg:hidden flex flex-col"
+          >
+            {/* ── Header ── */}
+            <div className="shrink-0 flex items-center justify-between px-5 pt-5 pb-4 border-b border-cream-dark/20">
+              <Link
+                to="/"
+                onClick={onClose}
+                className="text-xl font-heading font-bold text-forest"
+              >
+                SERENE
+              </Link>
+              <button
+                onClick={onClose}
+                className="p-2 -mr-2 rounded-lg text-forest/40 hover:text-forest hover:bg-forest/5 transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* ── Navigation ── */}
+            <nav className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-1">
+              {NAV_LINKS.map((link) => {
+                const isActive = location.pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    onClick={onClose}
+                    className={cn(
+                      'flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium transition-all duration-200',
+                      isActive
+                        ? 'bg-clay/10 text-clay-dark'
+                        : 'text-forest/80 hover:text-forest hover:bg-forest/[0.04]',
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+
+              {/* Divider */}
+              <div className="h-px bg-cream-dark/30 my-3" />
+
+              {/* Secondary links */}
+              {MOBILE_SECONDARY.map((item) => (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  onClick={onClose}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-forest/70 hover:text-forest hover:bg-forest/[0.04] transition-all duration-200"
+                >
+                  <item.icon className="w-5 h-5 text-forest/30" />
+                  {item.label}
+                  {item.showBadge && totalQuantity > 0 && (
+                    <span className="ml-auto bg-clay text-white text-xs font-bold min-w-[22px] h-[22px] flex items-center justify-center rounded-full px-1.5">
+                      {totalQuantity > 99 ? '99+' : totalQuantity}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </nav>
+
+            {/* ── Footer ── */}
+            <div className="shrink-0 px-5 py-4 border-t border-cream-dark/20">
+              <p className="text-[11px] text-forest/30 text-center tracking-wide">
+                &copy; {new Date().getFullYear()} SERENE
+              </p>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
