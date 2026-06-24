@@ -319,6 +319,9 @@ function ImageGallery({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const currentImage = allImages[selectedIndex] ?? null;
 
+  const MAX_VISIBLE = 5;
+  const hasMore = allImages.length > MAX_VISIBLE;
+
   return (
     <div className="space-y-4">
       {/* Main hero image */}
@@ -347,16 +350,16 @@ function ImageGallery({
         )}
       </motion.div>
 
-      {/* Thumbnail strip — always scrollable, scales with screen */}
+      {/* Thumbnail strip — max 5 visible, scrollable for overflow */}
       {allImages.length > 1 && (
-        <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none snap-x">
-          {allImages.map((img, i) => (
+        <div className="flex gap-1.5 sm:gap-2.5 overflow-x-auto pb-1.5 scrollbar-none snap-x">
+          {allImages.slice(0, MAX_VISIBLE).map((img, i) => (
             <button
               key={img.id ?? i}
               type="button"
               onClick={() => setSelectedIndex(i)}
               className={cn(
-                'relative shrink-0 snap-start w-14 sm:w-20 h-14 sm:h-20 rounded-lg overflow-hidden border-2 transition-all duration-200',
+                'relative shrink-0 snap-start w-12 sm:w-[72px] h-12 sm:h-[72px] rounded-lg overflow-hidden border-2 transition-all duration-200',
                 i === selectedIndex
                   ? 'border-clay ring-1 ring-clay/30'
                   : 'border-transparent opacity-60 hover:opacity-90 hover:border-forest/20',
@@ -370,6 +373,13 @@ function ImageGallery({
               />
             </button>
           ))}
+
+          {/* "+N more" indicator — not a button, just visual */}
+          {hasMore && (
+            <span className="shrink-0 w-12 sm:w-[72px] h-12 sm:h-[72px] rounded-lg border-2 border-dashed border-forest/12 bg-cream-dark/20 flex items-center justify-center text-[11px] font-heading font-bold text-forest/25">
+              +{allImages.length - MAX_VISIBLE}
+            </span>
+          )}
         </div>
       )}
     </div>
