@@ -317,7 +317,12 @@ function ImageGallery({
     : images;
 
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [showAllThumbs, setShowAllThumbs] = useState(false);
   const currentImage = allImages[selectedIndex] ?? null;
+
+  const MAX_VISIBLE_THUMBS = 4;
+  const visibleImages = showAllThumbs ? allImages : allImages.slice(0, MAX_VISIBLE_THUMBS);
+  const hiddenCount = allImages.length - MAX_VISIBLE_THUMBS;
 
   return (
     <div className="space-y-4">
@@ -349,14 +354,14 @@ function ImageGallery({
 
       {/* Thumbnail strip */}
       {allImages.length > 1 && (
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
-          {allImages.map((img, i) => (
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin items-center">
+          {visibleImages.map((img, i) => (
             <button
               key={img.id ?? i}
               type="button"
               onClick={() => setSelectedIndex(i)}
               className={cn(
-                'relative shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-200',
+                'relative shrink-0 w-16 sm:w-20 h-16 sm:h-20 rounded-lg overflow-hidden border-2 transition-all duration-200',
                 i === selectedIndex
                   ? 'border-clay ring-1 ring-clay/30'
                   : 'border-transparent opacity-60 hover:opacity-90 hover:border-forest/20',
@@ -370,6 +375,34 @@ function ImageGallery({
               />
             </button>
           ))}
+
+          {/* "+N more" button */}
+          {hiddenCount > 0 && !showAllThumbs && (
+            <button
+              type="button"
+              onClick={() => setShowAllThumbs(true)}
+              className="shrink-0 w-16 sm:w-20 h-16 sm:h-20 rounded-lg overflow-hidden border-2 border-dashed border-forest/15 bg-cream-dark/30 flex flex-col items-center justify-center gap-0.5 text-forest/40 hover:text-clay hover:border-clay/30 hover:bg-clay/5 transition-all duration-200"
+              aria-label={`Show ${hiddenCount} more images`}
+            >
+              <span className="text-lg sm:text-xl font-heading font-bold leading-none">
+                +{hiddenCount}
+              </span>
+              <span className="text-[9px] sm:text-[10px] font-medium leading-none">
+                more
+              </span>
+            </button>
+          )}
+
+          {/* "Show less" link when expanded */}
+          {showAllThumbs && hiddenCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowAllThumbs(false)}
+              className="shrink-0 text-[11px] text-forest/40 hover:text-forest transition-colors px-1 whitespace-nowrap"
+            >
+              Show less
+            </button>
+          )}
         </div>
       )}
     </div>
