@@ -3,100 +3,103 @@
  * Creates the Customer Account client for OAuth-based login/register.
  */
 import { createCustomerAccountClient } from '@shopify/hydrogen';
-import { redirect, type LoaderFunctionArgs, type ActionFunctionArgs } from 'react-router';
-import { createHydrogenSession } from './session';
+import { createCookieSessionStorage, redirect, type LoaderFunctionArgs } from 'react-router';
 
-/** Create a customer account client from a request (use in loaders/actions) */
-export async function getCustomerAccount(request: Request) {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) throw new Error('SESSION_SECRET is not set');
+/** HydrogenSession type expected by createCustomerAccountClient */
+type HydrogenSession = {
+  get: (key: string) => Promise<string | null>;
+  set: (key: string, value: string) => Promise<void>;
+  unset: (key: string) => Promise<void>;
+  commit: () => Promise<string>;
+  destroy: () => Promise<string>;
+};
 
-  const session = await createHydrogenSession(request, secret);
-  const customerAccountId = process.env.PUBLIC_CUSTOMER_ACCOUNT_CLIENT_ID;
-  const shopId = process.env.PUBLIC_STORE_ID;
+let sessionStorage: ReturnType<typeof createCookieSessionStorage> | null = null;
 
-  if (!customerAccountId || !shopId) {
-    throw new Error('Customer Account API credentials not configured in .env');
+function getSessionStorage(secret: string) {
+  if (!sessionStorage) {
+    sessionStorage = createCookieSessionStorage({
+      cookie: {
+        name: 'session',
+        httpOnly: true,
+        path: '/',
+        sameSite: 'lax',
+        secrets: [secret],
+        secure: process.env.NODE_ENV === 'production',
+      },
+    });
   }
+  return sessionStorage;
+}
 
+async function createHydrogenSession(request: Request): Promise<HydrogenSession> {
+  const secret = process.env.SESSION_SECRET || '';
+  const storage = getSessionStorage(secret);
+  const session = await storage.getSession(request.headers.get('Cookie'));
+  return {
+    get: session.get.bind(session),
+    set: session.set.bind(session),
+    unset: session.unset.bind(session),
+    commit: () => storage.commitSession(session),
+    destroy: () => storage.destroySession(session),
+  };
+}
+
+export async function getCustomerAccount(request: Request) {
+  const session = await createHydrogenSession(request);
   return createCustomerAccountClient({
     session,
-    customerAccountId,
-    shopId,
+    customerAccountId: process.env.PUBLIC_CUSTOMER_ACCOUNT_CLIENT_ID || '',
+    shopId: process.env.PUBLIC_STORE_ID || '',
+    customerApiVersion: '2026-04',
     request,
-    // Use the SDK's default API version (omitted to let Hydrogen decide)
     loginPath: '/account/login',
     authorizePath: '/account/authorize',
     defaultRedirectPath: '/account',
   });
 }
 
-/**
- * Guard for loaders: redirects to /account/login if user is NOT authenticated.
- * Use this in account route loaders that require login.
- */
+/** Auth guard for account routes — throws redirect to login if not authenticated */
 export async function requireCustomer(
-  args: LoaderFunctionArgs | ActionFunctionArgs,
+  args: LoaderFunctionArgs | { request: Request },
 ) {
   const customer = await getCustomerAccount(args.request);
-  const isLoggedIn = await customer.isLoggedIn();
-  if (!isLoggedIn) {
-    const url = new URL(args.request.url);
-    const redirectTo = encodeURIComponent(url.pathname);
-    throw redirect(`/account/login?redirect=${redirectTo}`);
-  }
+  // handleAuthStatus() throws a redirect Response if not logged in
+  // React Router catches it and follows the redirect
+  await customer.handleAuthStatus();
   return customer;
 }
 
 /** Customer Account API GraphQL queries */
 export const CUSTOMER_QUERIES = {
-  /** Fetch customer profile details */
   CUSTOMER_INFO: `#graphql
     query CustomerInfo {
       customer {
-        id
         firstName
         lastName
         emailAddress {
           emailAddress
-        }
-        phoneNumber {
-          phoneNumber
         }
       }
     }
   `,
-
-  /** Fetch customer with orders */
-  CUSTOMER_WITH_ORDERS: `#graphql
-    query CustomerWithOrders($first: Int!) {
+  ORDERS: `#graphql
+    query Orders {
       customer {
-        id
-        firstName
-        lastName
-        emailAddress {
-          emailAddress
-        }
-        numberOfOrders
-        orders(first: $first) {
+        orders(first: 20) {
           nodes {
             id
-            orderNumber
+            name
             processedAt
             totalPrice {
               amount
               currencyCode
             }
             fulfillmentStatus
-            financialStatus
-            lineItems(first: 10) {
+            lineItems(first: 5) {
               nodes {
                 title
                 quantity
-                image {
-                  url
-                  altText
-                }
               }
             }
           }
@@ -104,37 +107,25 @@ export const CUSTOMER_QUERIES = {
       }
     }
   `,
-
-  /** Fetch customer addresses */
-  CUSTOMER_ADDRESSES: `#graphql
-    query CustomerAddresses {
+  ADDRESSES: `#graphql
+    query Addresses {
       customer {
-        id
-        defaultAddress {
-          id
-          address1
-          address2
-          city
-          province
-          zip
-          country
-          firstName
-          lastName
-          phone
-        }
-        addresses(first: 20) {
+        addresses(first: 10) {
           nodes {
             id
             address1
             address2
             city
             province
-            zip
             country
+            zip
             firstName
             lastName
             phone
           }
+        }
+        defaultAddress {
+          id
         }
       }
     }

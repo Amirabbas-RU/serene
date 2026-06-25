@@ -1,5 +1,7 @@
 /**
  * Account/Login — Login page with Shopify Customer Account API OAuth.
+ * Clicking "Sign in with Shopify" links to /account/authorize which
+ * redirects to Shopify's hosted login.
  */
 import type { LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, Link, useSearchParams, redirect } from 'react-router';
@@ -10,31 +12,19 @@ import { Badge } from '~/components/ui/badge';
 import { getCustomerAccount } from '~/lib/customer';
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  try {
-    const customer = await getCustomerAccount(request);
+  const customer = await getCustomerAccount(request);
 
-    // If already logged in, redirect to account
-    const isLoggedIn = await customer.isLoggedIn();
-    if (isLoggedIn) {
-      const url = new URL(request.url);
-      const redirectTo = url.searchParams.get('redirect') || '/account';
-      return redirect(redirectTo);
-    }
-
-    return {
-      shopName: 'SERENE',
-      redirectTo: new URL(request.url).searchParams.get('redirect') || '/account',
-      error: new URL(request.url).searchParams.get('error') || null,
-    };
-  } catch (err) {
-    console.error('[login] Error:', err);
-    const message = err instanceof Error ? err.message : String(err);
-    return {
-      shopName: 'SERENE',
-      redirectTo: '/account',
-      error: message,
-    };
+  // If already logged in, redirect to account
+  if (await customer.isLoggedIn()) {
+    const url = new URL(request.url);
+    return redirect(url.searchParams.get('redirect') || '/account');
   }
+
+  return {
+    shopName: 'SERENE',
+    redirectTo: new URL(request.url).searchParams.get('redirect') || '/account',
+    error: new URL(request.url).searchParams.get('error') || null,
+  };
 }
 
 export default function LoginPage() {
@@ -82,13 +72,7 @@ export default function LoginPage() {
               animate={{ opacity: 1, y: 0 }}
               className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm"
             >
-              {queryError === 'invalid_credentials'
-                ? 'Invalid email or password. Please try again.'
-                : queryError === 'required'
-                  ? 'Please fill in all required fields.'
-                  : queryError === 'access_denied'
-                    ? 'You denied the login request. Please try again if you changed your mind.'
-                    : `Error: ${queryError}`}
+              {queryError}
             </motion.div>
           )}
 
@@ -98,7 +82,6 @@ export default function LoginPage() {
             variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
             className="bg-cream-light/80 backdrop-blur-sm rounded-2xl border border-cream-dark/30 p-8 shadow-sm"
           >
-            {/* Shopify-hosted login button — links directly to authorize route */}
             <motion.div variants={stagger}>
               <Button
                 variant="primary"
@@ -112,15 +95,12 @@ export default function LoginPage() {
               </Button>
             </motion.div>
 
-            {/* Explanation */}
             <motion.div variants={stagger} className="mt-4">
               <p className="text-xs text-forest/50 text-center leading-relaxed">
                 You'll be redirected to Shopify's secure login page.
-                You can sign in with your email or use a social login.
               </p>
             </motion.div>
 
-            {/* Divider */}
             <motion.div variants={stagger} className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-cream-dark/30" />
@@ -130,7 +110,6 @@ export default function LoginPage() {
               </div>
             </motion.div>
 
-            {/* Register */}
             <motion.div variants={stagger}>
               <Button
                 variant="secondary"
@@ -142,11 +121,6 @@ export default function LoginPage() {
                 <Sparkles className="w-4 h-4" />
                 Create an Account
               </Button>
-            </motion.div>
-            <motion.div variants={stagger} className="mt-2">
-              <p className="text-xs text-forest/40 text-center">
-                Creating an account also happens via Shopify's secure login page.
-              </p>
             </motion.div>
           </motion.div>
 

@@ -1,69 +1,43 @@
 /**
  * Account Index — Shows a welcome page with real customer data from Customer Account API.
+ * handleAuthStatus() throws a redirect to /account/login if not authenticated.
  */
 import type { LoaderFunctionArgs } from 'react-router';
-import { useLoaderData, Link, useRouteError, isRouteErrorResponse, redirect } from 'react-router';
+import { useLoaderData, Link, useRouteError, isRouteErrorResponse } from 'react-router';
 import { motion } from 'framer-motion';
 import { Package, MapPin, User, ShoppingBag } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
 import { ErrorPage } from '~/components/ErrorPage';
-import { getCustomerAccount, CUSTOMER_QUERIES } from '~/lib/customer';
+import { requireCustomer, CUSTOMER_QUERIES } from '~/lib/customer';
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const url = new URL(request.url);
+  // handleAuthStatus() throws a redirect to /account/login if not logged in
+  const customer = await requireCustomer({ request });
+  const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_INFO);
+  const profile = (data as any)?.customer ?? null;
 
-  try {
-    const customer = await getCustomerAccount(request);
-    const isLoggedIn = await customer.isLoggedIn();
-
-    if (!isLoggedIn) {
-      // Auto-redirect to login page
-      const redirectTo = encodeURIComponent(url.pathname);
-      return redirect(`/account/login?redirect=${redirectTo}`);
-    }
-
-    const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_INFO);
-    const profile = (data as any)?.customer ?? null;
-
-    return {
-      customer: profile
-        ? {
-            firstName: profile.firstName || '',
-            lastName: profile.lastName || '',
-            email: profile.emailAddress?.emailAddress || '',
-          }
-        : null,
-    };
-  } catch (err) {
-    console.error('[account] Customer API error:', err);
-    const message = err instanceof Error ? err.message : String(err);
-    return new Response(
-      JSON.stringify({
-        title: 'Account Unavailable',
-        message: `Could not load your account: ${message}`,
-      }),
-      {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
-  }
+  return {
+    customer: profile
+      ? {
+          firstName: profile.firstName || '',
+          lastName: profile.lastName || '',
+          email: profile.emailAddress?.emailAddress || '',
+        }
+      : null,
+  };
 }
 
 export function ErrorBoundary() {
   const error = useRouteError();
-
   if (isRouteErrorResponse(error)) {
+    // If it's a redirect (302), let React Router handle it
+    if (error.status >= 300 && error.status < 400) throw error;
     let message = 'Something went wrong.';
-    if (error.data?.message) {
-      message = error.data.message;
-    } else if (typeof error.data === 'string') {
-      message = error.data;
-    }
+    if (error.data?.message) message = error.data.message;
+    else if (typeof error.data === 'string') message = error.data;
     return <ErrorPage status={error.status} message={message} />;
   }
-
   return <ErrorPage status={400} message="An unexpected error occurred." />;
 }
 
@@ -110,24 +84,9 @@ export default function AccountIndex() {
       {/* Quick Links Grid */}
       <div className="grid sm:grid-cols-3 gap-4">
         {[
-          {
-            icon: Package,
-            title: 'Orders',
-            desc: 'Track, return, or buy again',
-            href: '/account/orders',
-          },
-          {
-            icon: MapPin,
-            title: 'Addresses',
-            desc: 'Manage shipping addresses',
-            href: '/account/addresses',
-          },
-          {
-            icon: User,
-            title: 'Profile',
-            desc: 'Name, email, and password',
-            href: '/account/profile',
-          },
+          { icon: Package, title: 'Orders', desc: 'Track, return, or buy again', href: '/account/orders' },
+          { icon: MapPin, title: 'Addresses', desc: 'Manage shipping addresses', href: '/account/addresses' },
+          { icon: User, title: 'Profile', desc: 'Name, email, and password', href: '/account/profile' },
         ].map((item, i) => (
           <motion.div
             key={item.title}
