@@ -1,25 +1,39 @@
 /**
- * Account Profile — Shows and manages customer profile via Customer Account API.
+ * Account Profile — Customer profile from Customer Account API.
  */
 import type { LoaderFunctionArgs } from 'react-router';
-import { useLoaderData } from 'react-router';
+import { useLoaderData, useRouteError, isRouteErrorResponse } from 'react-router';
 import { motion } from 'framer-motion';
 import { User, Mail, Phone } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
+import { ErrorPage } from '~/components/ErrorPage';
 import { requireCustomer, CUSTOMER_QUERIES } from '~/lib/customer';
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const customer = await requireCustomer({ request } as LoaderFunctionArgs);
+  try {
+    const customer = await requireCustomer({ request } as LoaderFunctionArgs);
+    const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_INFO);
+    const profile = (data as any)?.customer ?? null;
 
-  const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_INFO);
-  const profile = (data as any)?.customer ?? null;
+    return {
+      firstName: profile?.firstName || '',
+      lastName: profile?.lastName || '',
+      email: profile?.emailAddress?.emailAddress || '',
+      phone: profile?.phoneNumber?.phoneNumber || '',
+    };
+  } catch (err) {
+    if (err instanceof Response) throw err;
+    throw new Response('Failed to load profile', { status: 400 });
+  }
+}
 
-  return {
-    firstName: profile?.firstName || '',
-    lastName: profile?.lastName || '',
-    email: profile?.emailAddress?.emailAddress || '',
-    phone: profile?.phoneNumber?.phoneNumber || '',
-  };
+export function ErrorBoundary() {
+  const error = useRouteError();
+  if (isRouteErrorResponse(error)) {
+    if (error.status >= 300 && error.status < 400) throw error;
+    return <ErrorPage status={error.status} message={error.data?.message || 'Something went wrong.'} />;
+  }
+  return <ErrorPage status={400} message="An unexpected error occurred." />;
 }
 
 export default function AccountProfile() {

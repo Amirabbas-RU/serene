@@ -1,30 +1,32 @@
 /**
- * Account/Login — Login page with Shopify Customer Account API OAuth.
- * Clicking "Sign in with Shopify" links to /account/authorize which
- * redirects to Shopify's hosted login.
+ * Account/Login — Login page with Shopify Customer Account API OAuth link.
+ * Clicking "Sign in with Shopify" navigates to /account/authorize.
  */
 import type { LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, Link, useSearchParams, redirect } from 'react-router';
 import { motion } from 'framer-motion';
-import { LogIn, Sparkles, ShoppingBag } from 'lucide-react';
+import { LogIn, Sparkles } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import { getCustomerAccount } from '~/lib/customer';
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const customer = await getCustomerAccount(request);
-
-  // If already logged in, redirect to account
-  if (await customer.isLoggedIn()) {
-    const url = new URL(request.url);
-    return redirect(url.searchParams.get('redirect') || '/account');
+  try {
+    const customer = await getCustomerAccount(request);
+    if (await customer.isLoggedIn()) {
+      const redirectTo = new URL(request.url).searchParams.get('redirect') || '/account';
+      return redirect(redirectTo);
+    }
+    return {
+      redirectTo: new URL(request.url).searchParams.get('redirect') || '/account',
+      error: new URL(request.url).searchParams.get('error') || null,
+    };
+  } catch (err) {
+    return {
+      redirectTo: '/account',
+      error: `Auth client error: ${err instanceof Error ? err.message : String(err)}`,
+    };
   }
-
-  return {
-    shopName: 'SERENE',
-    redirectTo: new URL(request.url).searchParams.get('redirect') || '/account',
-    error: new URL(request.url).searchParams.get('error') || null,
-  };
 }
 
 export default function LoginPage() {
@@ -39,7 +41,6 @@ export default function LoginPage() {
 
   return (
     <div>
-      {/* ─── HEADER ─── */}
       <section className="pt-32 pb-16 px-6 bg-gradient-to-b from-forest via-forest-light to-forest relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 left-1/4 w-[28rem] h-[28rem] bg-clay/10 rounded-full blur-3xl" />
@@ -63,7 +64,6 @@ export default function LoginPage() {
         </motion.div>
       </section>
 
-      {/* ─── LOGIN FORM ─── */}
       <section className="py-16 px-6 bg-cream">
         <div className="max-w-md mx-auto">
           {queryError && (

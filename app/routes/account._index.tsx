@@ -1,6 +1,6 @@
 /**
- * Account Index — Shows a welcome page with real customer data from Customer Account API.
- * handleAuthStatus() throws a redirect to /account/login if not authenticated.
+ * Account Index — Dashboard with customer data from Customer Account API.
+ * Uses requireCustomer() which checks isLoggedIn() and redirects if unauthenticated.
  */
 import type { LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, Link, useRouteError, isRouteErrorResponse } from 'react-router';
@@ -12,26 +12,30 @@ import { ErrorPage } from '~/components/ErrorPage';
 import { requireCustomer, CUSTOMER_QUERIES } from '~/lib/customer';
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  // handleAuthStatus() throws a redirect to /account/login if not logged in
-  const customer = await requireCustomer({ request });
-  const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_INFO);
-  const profile = (data as any)?.customer ?? null;
+  try {
+    const customer = await requireCustomer({ request } as LoaderFunctionArgs);
+    const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_INFO);
+    const profile = (data as any)?.customer ?? null;
 
-  return {
-    customer: profile
-      ? {
-          firstName: profile.firstName || '',
-          lastName: profile.lastName || '',
-          email: profile.emailAddress?.emailAddress || '',
-        }
-      : null,
-  };
+    return {
+      customer: profile
+        ? {
+            firstName: profile.firstName || '',
+            lastName: profile.lastName || '',
+            email: profile.emailAddress?.emailAddress || '',
+          }
+        : null,
+    };
+  } catch (err) {
+    // Pass through Responses (redirects from requireCustomer)
+    if (err instanceof Response) throw err;
+    throw new Response('Failed to load account data', { status: 400 });
+  }
 }
 
 export function ErrorBoundary() {
   const error = useRouteError();
   if (isRouteErrorResponse(error)) {
-    // If it's a redirect (302), let React Router handle it
     if (error.status >= 300 && error.status < 400) throw error;
     let message = 'Something went wrong.';
     if (error.data?.message) message = error.data.message;

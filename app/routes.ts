@@ -32,7 +32,6 @@ export default [
     ]),
   ]),
   route('account', 'routes/account.tsx'),
-  route('account/*?', 'routes/account.$.tsx'),
 
   /* ─── Pages ─── */
   route('pages/:handle', 'routes/pages.$handle.tsx'),

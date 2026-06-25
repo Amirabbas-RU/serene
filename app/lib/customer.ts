@@ -1,72 +1,45 @@
 /**
- * Customer Account API helper.
- * Creates the Customer Account client for OAuth-based login/register.
+ * Customer Account API client.
+ * Wraps Hydrogen's createCustomerAccountClient for OAuth-based login/register.
+ *
+ * Key difference from old implementation: uses `isLoggedIn()` instead of
+ * `handleAuthStatus()` — avoids 400 Bad Request on stale/expired tokens.
  */
 import { createCustomerAccountClient } from '@shopify/hydrogen';
-import { createCookieSessionStorage, redirect, type LoaderFunctionArgs } from 'react-router';
-
-/** HydrogenSession type expected by createCustomerAccountClient */
-type HydrogenSession = {
-  get: (key: string) => Promise<string | null>;
-  set: (key: string, value: string) => Promise<void>;
-  unset: (key: string) => Promise<void>;
-  commit: () => Promise<string>;
-  destroy: () => Promise<string>;
-};
-
-let sessionStorage: ReturnType<typeof createCookieSessionStorage> | null = null;
-
-function getSessionStorage(secret: string) {
-  if (!sessionStorage) {
-    sessionStorage = createCookieSessionStorage({
-      cookie: {
-        name: 'session',
-        httpOnly: true,
-        path: '/',
-        sameSite: 'lax',
-        secrets: [secret],
-        secure: process.env.NODE_ENV === 'production',
-      },
-    });
-  }
-  return sessionStorage;
-}
-
-async function createHydrogenSession(request: Request): Promise<HydrogenSession> {
-  const secret = process.env.SESSION_SECRET || '';
-  const storage = getSessionStorage(secret);
-  const session = await storage.getSession(request.headers.get('Cookie'));
-  return {
-    get: session.get.bind(session),
-    set: session.set.bind(session),
-    unset: session.unset.bind(session),
-    commit: () => storage.commitSession(session),
-    destroy: () => storage.destroySession(session),
-  };
-}
+import { redirect, type LoaderFunctionArgs } from 'react-router';
+import { createHydrogenSession } from './session';
 
 export async function getCustomerAccount(request: Request) {
-  const session = await createHydrogenSession(request);
+  const session = await createHydrogenSession(
+    request,
+    process.env.SESSION_SECRET!,
+  );
   return createCustomerAccountClient({
     session,
-    customerAccountId: process.env.PUBLIC_CUSTOMER_ACCOUNT_CLIENT_ID || '',
-    shopId: process.env.PUBLIC_STORE_ID || '',
-    customerApiVersion: '2026-04',
+    customerAccountId: process.env.PUBLIC_CUSTOMER_ACCOUNT_CLIENT_ID!,
+    shopId: process.env.PUBLIC_STORE_ID!,
     request,
+    customerApiVersion: '2026-04',
     loginPath: '/account/login',
     authorizePath: '/account/authorize',
     defaultRedirectPath: '/account',
   });
 }
 
-/** Auth guard for account routes — throws redirect to login if not authenticated */
+/**
+ * Auth guard for account routes.
+ * Checks isLoggedIn() and redirects to login if not authenticated.
+ * Uses isLoggedIn() NOT handleAuthStatus() — avoids 400 errors.
+ */
 export async function requireCustomer(
-  args: LoaderFunctionArgs | { request: Request },
+  args: LoaderFunctionArgs,
 ) {
   const customer = await getCustomerAccount(args.request);
-  // handleAuthStatus() throws a redirect Response if not logged in
-  // React Router catches it and follows the redirect
-  await customer.handleAuthStatus();
+  const isLoggedIn = await customer.isLoggedIn();
+  if (!isLoggedIn) {
+    const url = new URL(args.request.url);
+    return redirect(`/account/login?redirect=${encodeURIComponent(url.pathname)}`);
+  }
   return customer;
 }
 
@@ -75,57 +48,49 @@ export const CUSTOMER_QUERIES = {
   CUSTOMER_INFO: `#graphql
     query CustomerInfo {
       customer {
+        id
         firstName
         lastName
-        emailAddress {
-          emailAddress
-        }
+        emailAddress { emailAddress }
+        phoneNumber { phoneNumber }
       }
     }
   `,
-  ORDERS: `#graphql
-    query Orders {
+  CUSTOMER_WITH_ORDERS: `#graphql
+    query CustomerWithOrders($first: Int!) {
       customer {
-        orders(first: 20) {
+        id
+        firstName
+        lastName
+        emailAddress { emailAddress }
+        numberOfOrders
+        orders(first: $first) {
           nodes {
             id
-            name
+            orderNumber
             processedAt
-            totalPrice {
-              amount
-              currencyCode
-            }
+            totalPrice { amount currencyCode }
             fulfillmentStatus
-            lineItems(first: 5) {
-              nodes {
-                title
-                quantity
-              }
+            financialStatus
+            lineItems(first: 10) {
+              nodes { title quantity image { url altText } }
             }
           }
         }
       }
     }
   `,
-  ADDRESSES: `#graphql
-    query Addresses {
+  CUSTOMER_ADDRESSES: `#graphql
+    query CustomerAddresses {
       customer {
-        addresses(first: 10) {
-          nodes {
-            id
-            address1
-            address2
-            city
-            province
-            country
-            zip
-            firstName
-            lastName
-            phone
-          }
-        }
+        id
         defaultAddress {
-          id
+          id address1 address2 city province zip country firstName lastName phone
+        }
+        addresses(first: 20) {
+          nodes {
+            id address1 address2 city province zip country firstName lastName phone
+          }
         }
       }
     }

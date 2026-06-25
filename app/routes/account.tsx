@@ -14,7 +14,7 @@ const ACCOUNT_LINKS = [
 export default function AccountLayout() {
   return (
     <div>
-      {/* ─── HEADER ─── */}
+      {/* HEADER */}
       <section className="pt-32 pb-16 px-6 bg-gradient-to-b from-forest via-forest-light to-forest relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-32 -right-32 w-[28rem] h-[28rem] bg-clay/8 rounded-full blur-3xl" />
@@ -41,7 +41,7 @@ export default function AccountLayout() {
         </motion.div>
       </section>
 
-      {/* ─── CONTENT ─── */}
+      {/* CONTENT */}
       <section className="py-12 px-6 bg-cream">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-4 gap-8">
@@ -82,7 +82,6 @@ export default function AccountLayout() {
                 </Link>
               </nav>
 
-              {/* Quick stats card */}
               <div className="mt-6 rounded-2xl bg-gradient-to-br from-forest/5 to-clay/5 border border-cream-dark/30 p-5">
                 <h3 className="font-heading text-sm text-forest/70 mb-2">Need Help?</h3>
                 <p className="text-xs text-forest/50 leading-relaxed mb-3">

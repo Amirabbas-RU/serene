@@ -1,7 +1,8 @@
 /**
- * Account/Logout — Clears the session and logs out from Shopify.
+ * Account/Logout — Clears session and logs out from Shopify Customer Account API.
+ * v8_middleware: must `return` the Response, never `throw`.
  */
-import { redirect, type LoaderFunctionArgs } from 'react-router';
+import { type LoaderFunctionArgs } from 'react-router';
 import { getCustomerAccount } from '~/lib/customer';
 
 export async function loader({ request }: LoaderFunctionArgs) {

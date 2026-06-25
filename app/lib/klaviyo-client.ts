@@ -4,19 +4,15 @@
  *
  * Usage:
  *   import { klaviyo } from '~/lib/klaviyo-client';
+ *   klaviyo.load('SITE_ID');
+ *   klaviyo.identify('user@email.com');
  *   klaviyo.track('Viewed Product', { ... });
- *   klaviyo.identify({ email: '...' });
  */
 
 type KlaviyoEventProperties = Record<string, unknown>;
 
 interface KlaviyoAPI {
   push: (args: unknown[]) => void;
-}
-
-interface KlaviyoWindow {
-  _learnq?: KlaviyoAPI;
-  klaviyo?: KlaviyoAPI;
 }
 
 declare global {
@@ -33,11 +29,9 @@ export function loadKlaviyo(siteId: string): void {
   if (loaded || typeof window === 'undefined') return;
   loaded = true;
 
-  // Initialize the queue
-  window._learnq = window._learnq || [];
+  window._learnq = window._learnq || ([] as unknown as KlaviyoAPI);
   window.klaviyo = window.klaviyo || window._learnq;
 
-  // Load the script
   const script = document.createElement('script');
   script.async = true;
   script.src = `https://static.klaviyo.com/onsite/js/klaviyo.js?company_id=${siteId}`;
@@ -47,43 +41,33 @@ export function loadKlaviyo(siteId: string): void {
 }
 
 function getQueue(): KlaviyoAPI {
-  return window._learnq || [];
+  return window._learnq || ([] as unknown as KlaviyoAPI);
 }
 
-/** Identify a user by email + properties */
+/** Identify a user — call before tracking events to link to customer profile */
 export function identify(email: string, properties?: KlaviyoEventProperties): void {
   getQueue().push(['identify', { $email: email, ...properties }]);
 }
 
-/** Track a named event with optional properties */
+/** Track a named event */
 export function track(eventName: string, properties?: KlaviyoEventProperties): void {
   getQueue().push(['track', eventName, properties ?? {}]);
 }
 
-/** Track a product view (Klaviyo's standard 'Viewed Product') */
+/** Track product view */
 export function trackViewedProduct(product: {
-  ProductID?: string;
-  Name?: string;
-  Categories?: string[];
-  ImageURL?: string;
-  URL?: string;
-  Brand?: string;
-  Price?: number;
-  CompareAtPrice?: number;
+  ProductID?: string; Name?: string; Categories?: string[];
+  ImageURL?: string; URL?: string; Brand?: string;
+  Price?: number; CompareAtPrice?: number;
 }): void {
   track('Viewed Product', product);
 }
 
 /** Track add to cart */
 export function trackAddedToCart(item: {
-  ProductID?: string;
-  Name?: string;
-  Categories?: string[];
-  ImageURL?: string;
-  URL?: string;
-  Brand?: string;
-  Price?: number;
-  Quantity?: number;
+  ProductID?: string; Name?: string; Categories?: string[];
+  ImageURL?: string; URL?: string; Brand?: string;
+  Price?: number; Quantity?: number;
 }): void {
   track('Added to Cart', item);
 }
@@ -93,7 +77,6 @@ export function trackStartedCheckout(items: Record<string, unknown>[]): void {
   track('Started Checkout', { Items: items });
 }
 
-/** Export a unified klaviyo object for convenient access */
 export const klaviyo = {
   load: loadKlaviyo,
   identify,

@@ -1,24 +1,35 @@
 /**
- * Account Orders — Displays real order history from Customer Account API.
+ * Account Orders — Order history from Customer Account API.
  */
 import type { LoaderFunctionArgs } from 'react-router';
-import { useLoaderData, Link } from 'react-router';
+import { useLoaderData, Link, useRouteError, isRouteErrorResponse } from 'react-router';
 import { motion } from 'framer-motion';
 import { Package, ShoppingBag, ArrowRight } from 'lucide-react';
 import { Button } from '~/components/ui/button';
+import { ErrorPage } from '~/components/ErrorPage';
 import { requireCustomer, CUSTOMER_QUERIES } from '~/lib/customer';
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const customer = await requireCustomer({ request } as LoaderFunctionArgs);
+  try {
+    const customer = await requireCustomer({ request } as LoaderFunctionArgs);
+    const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_WITH_ORDERS, {
+      variables: { first: 20 },
+    });
+    const customerData = (data as any)?.customer ?? null;
+    return { orders: customerData?.orders?.nodes ?? [] };
+  } catch (err) {
+    if (err instanceof Response) throw err;
+    throw new Response('Failed to load orders', { status: 400 });
+  }
+}
 
-  const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_WITH_ORDERS, {
-    variables: { first: 20 },
-  });
-  const customerData = (data as any)?.customer ?? null;
-
-  return {
-    orders: customerData?.orders?.nodes ?? [],
-  };
+export function ErrorBoundary() {
+  const error = useRouteError();
+  if (isRouteErrorResponse(error)) {
+    if (error.status >= 300 && error.status < 400) throw error;
+    return <ErrorPage status={error.status} message={error.data?.message || 'Something went wrong.'} />;
+  }
+  return <ErrorPage status={400} message="An unexpected error occurred." />;
 }
 
 export default function AccountOrders() {
@@ -58,9 +69,7 @@ export default function AccountOrders() {
                       </p>
                       <p className="text-xs text-forest/50">
                         {new Date(order.processedAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
+                          year: 'numeric', month: 'long', day: 'numeric',
                         })}
                       </p>
                     </div>

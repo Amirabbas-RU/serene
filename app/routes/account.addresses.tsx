@@ -1,24 +1,37 @@
 /**
- * Account Addresses — Shows real addresses from Customer Account API.
+ * Account Addresses — Real addresses from Customer Account API.
  */
 import type { LoaderFunctionArgs } from 'react-router';
-import { useLoaderData } from 'react-router';
+import { useLoaderData, useRouteError, isRouteErrorResponse } from 'react-router';
 import { motion } from 'framer-motion';
 import { MapPin, Plus } from 'lucide-react';
 import { Button } from '~/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { ErrorPage } from '~/components/ErrorPage';
 import { requireCustomer, CUSTOMER_QUERIES } from '~/lib/customer';
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const customer = await requireCustomer({ request } as LoaderFunctionArgs);
+  try {
+    const customer = await requireCustomer({ request } as LoaderFunctionArgs);
+    const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_ADDRESSES);
+    const customerData = (data as any)?.customer ?? null;
+    return {
+      defaultAddress: customerData?.defaultAddress ?? null,
+      addresses: customerData?.addresses?.nodes ?? [],
+    };
+  } catch (err) {
+    if (err instanceof Response) throw err;
+    throw new Response('Failed to load addresses', { status: 400 });
+  }
+}
 
-  const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_ADDRESSES);
-  const customerData = (data as any)?.customer ?? null;
-
-  return {
-    defaultAddress: customerData?.defaultAddress ?? null,
-    addresses: customerData?.addresses?.nodes ?? [],
-  };
+export function ErrorBoundary() {
+  const error = useRouteError();
+  if (isRouteErrorResponse(error)) {
+    if (error.status >= 300 && error.status < 400) throw error;
+    return <ErrorPage status={error.status} message={error.data?.message || 'Something went wrong.'} />;
+  }
+  return <ErrorPage status={400} message="An unexpected error occurred." />;
 }
 
 export default function AccountAddresses() {

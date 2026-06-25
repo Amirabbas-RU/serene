@@ -3,7 +3,7 @@ import type {LinksFunction, MetaFunction} from 'react-router';
 import {useEffect} from 'react';
 
 import {CartProvider} from '~/lib/cart-context';
-import {loadKlaviyo, klaviyo} from '~/lib/klaviyo-client';
+import {loadKlaviyo} from '~/lib/klaviyo-client';
 import { RootErrorBoundary } from '~/components/ErrorPage';
 import PageLayout from '~/components/PageLayout';
 
@@ -45,21 +45,10 @@ export const meta: MetaFunction = () => [
 export default function Root() {
   const location = useLocation();
 
-  // Load Klaviyo snippet on mount
+  // Load Klaviyo snippet once on mount
   useEffect(() => {
-    // Klaviyo site ID from env (injected at build time)
-    const siteId = 'WkDKeF';
-    loadKlaviyo(siteId);
+    loadKlaviyo('WkDKeF');
   }, []);
-
-  // Track page views on route change
-  useEffect(() => {
-    klaviyo.track('Viewed Page', {
-      url: window.location.href,
-      path: location.pathname,
-      title: document.title,
-    });
-  }, [location.pathname]);
 
   return (
     <html lang="en">
