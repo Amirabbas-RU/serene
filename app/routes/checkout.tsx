@@ -53,7 +53,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }));
 
   try {
-    const result = await client.query(CART_CREATE_MUTATION, {
+    const result = await client.mutate(CART_CREATE_MUTATION, {
       variables: {
         input: { lines },
       },
