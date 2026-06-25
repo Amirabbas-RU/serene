@@ -33,12 +33,12 @@ export async function getCustomerAccount(request: Request) {
  */
 export async function requireCustomer(
   args: LoaderFunctionArgs,
-) {
+): Promise<Awaited<ReturnType<typeof getCustomerAccount>>> {
   const customer = await getCustomerAccount(args.request);
   const isLoggedIn = await customer.isLoggedIn();
   if (!isLoggedIn) {
     const url = new URL(args.request.url);
-    return redirect(`/account/login?redirect=${encodeURIComponent(url.pathname)}`);
+    throw redirect(`/account/login?redirect=${encodeURIComponent(url.pathname)}`);
   }
   return customer;
 }
