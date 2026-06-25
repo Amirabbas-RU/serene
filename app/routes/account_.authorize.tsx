@@ -28,6 +28,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       redirectPath: url.searchParams.get('redirect') || '/account',
     });
   } catch (err) {
+    // If authorize() throws a Response (redirect or error), return it as-is
+    if (typeof Response !== 'undefined' && err instanceof Response) return err;
     console.error('[authorize] Error:', err);
     const message = err instanceof Error ? err.message : String(err);
     // Redirect to login with the error message so it's visible
