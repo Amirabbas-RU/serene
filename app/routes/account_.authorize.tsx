@@ -27,11 +27,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
         hasState: url.searchParams.has('state'),
       });
       const result = await customer.authorize();
-      if (result instanceof Response) return result;
 
-      // ⚠️ Hydrogen's authorize() stores the access token in the session
-      // but NEVER calls session.commit(). Commit manually so the cookie
-      // with the auth tokens reaches the browser.
+      // ⚠️ Hydrogen's authorize() returns a redirect Response but without
+      // Set-Cookie. If it returns a Response (including its own redirect),
+      // extract the Location and commit the session ourselves.
+      if (result instanceof Response) {
+        // If it's NOT a redirect (e.g., error), pass through
+        if (result.status < 300 || result.status >= 400) return result;
+        // It's a redirect — grab its Location and append Set-Cookie
+        const target = result.headers.get('Location') || url.searchParams.get('redirect') || '/account';
+        const cookieHeader = await session.commit();
+        if (cookieHeader) {
+          const headers = new Headers();
+          headers.set('Location', target);
+          headers.set('Set-Cookie', cookieHeader);
+          return new Response(null, { status: 302, headers });
+        }
+        return redirect(target);
+      }
+
+      // authorize() returned void — commit session manually
       const cookieHeader = await session.commit();
       const target = url.searchParams.get('redirect') || '/account';
       if (cookieHeader) {
