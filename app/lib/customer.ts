@@ -9,12 +9,12 @@ import { createCustomerAccountClient } from '@shopify/hydrogen';
 import { redirect, type LoaderFunctionArgs } from 'react-router';
 import { createHydrogenSession } from './session';
 
-export async function getCustomerAccount(request: Request) {
+export async function createCustomerAccountClientWithSession(request: Request) {
   const session = await createHydrogenSession(
     request,
     process.env.SESSION_SECRET!,
   );
-  return createCustomerAccountClient({
+  const customer = createCustomerAccountClient({
     session,
     customerAccountId: process.env.PUBLIC_CUSTOMER_ACCOUNT_CLIENT_ID!,
     shopId: process.env.PUBLIC_STORE_ID!,
@@ -24,6 +24,12 @@ export async function getCustomerAccount(request: Request) {
     authorizePath: '/account/authorize',
     defaultRedirectPath: '/account',
   });
+  return { customer, session };
+}
+
+export async function getCustomerAccount(request: Request) {
+  const { customer } = await createCustomerAccountClientWithSession(request);
+  return customer;
 }
 
 /**
