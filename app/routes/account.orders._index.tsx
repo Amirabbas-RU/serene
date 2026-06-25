@@ -15,7 +15,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_WITH_ORDERS, {
       variables: { first: 20 },
     });
-    const customerData = (data as any)?.customer ?? null;
+    const customerData = (data as any)?.data?.customer ?? null;
     return { orders: customerData?.orders?.nodes ?? [] };
   } catch (err) {
     if (err instanceof Response) throw err;

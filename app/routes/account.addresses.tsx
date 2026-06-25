@@ -14,7 +14,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const customer = await requireCustomer({ request } as LoaderFunctionArgs);
     const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_ADDRESSES);
-    const customerData = (data as any)?.customer ?? null;
+    const customerData = (data as any)?.data?.customer ?? null;
     return {
       defaultAddress: customerData?.defaultAddress ?? null,
       addresses: customerData?.addresses?.nodes ?? [],

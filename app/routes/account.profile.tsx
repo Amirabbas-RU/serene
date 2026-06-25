@@ -13,7 +13,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const customer = await requireCustomer({ request } as LoaderFunctionArgs);
     const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_INFO);
-    const profile = (data as any)?.customer ?? null;
+    const profile = (data as any)?.data?.customer ?? null;
     console.log('[profile] Raw API response:', JSON.stringify(data));
 
     return {
@@ -22,7 +22,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       email: profile?.emailAddress?.emailAddress || '',
       phone: profile?.phoneNumber?.phoneNumber || '',
       displayName: profile?.displayName || '',
-      raw: JSON.stringify(data),
     };
   } catch (err) {
     if (err instanceof Response) throw err;
@@ -59,12 +58,6 @@ export default function AccountProfile() {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      {/* Debug raw data */}
-      <details className="text-xs text-forest/30">
-        <summary>Debug: Raw API data</summary>
-        <pre className="mt-2 p-2 bg-forest/5 rounded overflow-auto max-h-40">{raw}</pre>
-      </details>
-
       {/* Avatar + Name Header */}
       <Card>
         <CardContent className="pt-8 pb-6">
