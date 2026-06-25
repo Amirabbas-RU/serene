@@ -1,20 +1,38 @@
-import type { ActionFunctionArgs } from 'react-router';
-import { redirect } from 'react-router';
+/**
+ * Account/Authorize — OAuth callback from Shopify Customer Account API.
+ * Two modes:
+ *   1. No `code` param → calls `customer.login()` to initiate Shopify OAuth redirect.
+ *   2. With `code` param → exchanges the authorization code for tokens.
+ *
+ * IMPORTANT: With v8_middleware=true, loaders must RETURN Responses, not throw them.
+ */
+import { redirect, type LoaderFunctionArgs } from 'react-router';
+import { getCustomerAccount } from '~/lib/customer';
 
-export async function action({ request }: ActionFunctionArgs) {
-  const formData = await request.formData();
-  const email = formData.get('email');
-  const password = formData.get('password');
-  const redirectTo = (formData.get('redirect') as string) || '/account';
+export async function loader({ request }: LoaderFunctionArgs) {
+  try {
+    const customer = await getCustomerAccount(request);
+    const url = new URL(request.url);
+    const hasCode = url.searchParams.has('code');
 
-  if (!email || !password) {
-    return redirect(`/account/login?error=required`);
+    if (hasCode) {
+      // OAuth callback — exchange the authorization code for tokens
+      const result = await customer.authorize();
+      // authorize() may return a redirect Response or nothing
+      if (result instanceof Response) return result;
+      return redirect(url.searchParams.get('redirect') || '/account');
+    }
+
+    // Initiate OAuth — customer.login() returns a redirect Response to Shopify
+    return customer.login({
+      redirectPath: url.searchParams.get('redirect') || '/account',
+    });
+  } catch (err) {
+    console.error('[authorize] Error:', err);
+    const message = err instanceof Error ? err.message : String(err);
+    // Redirect to login with the error message so it's visible
+    return redirect(`/account/login?error=${encodeURIComponent(message)}`);
   }
-
-  // In a real store, this would authenticate against Shopify's Customer API.
-  // For now, redirect to account as a logged-in view simulation.
-  // TODO: Implement real customer authentication
-  return redirect(redirectTo);
 }
 
 export default function AuthorizePage() {

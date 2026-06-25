@@ -1,28 +1,46 @@
+/**
+ * Account/Login — Login page with Shopify Customer Account API OAuth.
+ */
 import type { LoaderFunctionArgs } from 'react-router';
-import { useLoaderData, Form, Link, useSearchParams } from 'react-router';
+import { useLoaderData, Link, useSearchParams, redirect } from 'react-router';
 import { motion } from 'framer-motion';
-import { LogIn, Mail, Lock, ArrowRight, Eye, EyeOff, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { LogIn, Sparkles, ShoppingBag } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
-import { getStorefrontClient } from '~/lib/storefront';
+import { getCustomerAccount } from '~/lib/customer';
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const storefront = getStorefrontClient();
-  const url = new URL(request.url);
-  const redirectTo = url.searchParams.get('redirect') || '/account';
+  try {
+    const customer = await getCustomerAccount(request);
 
-  return {
-    shopName: 'SERENE',
-    redirectTo,
-  };
+    // If already logged in, redirect to account
+    const isLoggedIn = await customer.isLoggedIn();
+    if (isLoggedIn) {
+      const url = new URL(request.url);
+      const redirectTo = url.searchParams.get('redirect') || '/account';
+      return redirect(redirectTo);
+    }
+
+    return {
+      shopName: 'SERENE',
+      redirectTo: new URL(request.url).searchParams.get('redirect') || '/account',
+      error: new URL(request.url).searchParams.get('error') || null,
+    };
+  } catch (err) {
+    console.error('[login] Error:', err);
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      shopName: 'SERENE',
+      redirectTo: '/account',
+      error: message,
+    };
+  }
 }
 
 export default function LoginPage() {
-  const { redirectTo } = useLoaderData<typeof loader>();
+  const { redirectTo, error } = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
-  const error = searchParams.get('error');
-  const [showPassword, setShowPassword] = useState(false);
+  const queryError = error || searchParams.get('error');
 
   const stagger = {
     hidden: { opacity: 0, y: 20 },
@@ -58,17 +76,19 @@ export default function LoginPage() {
       {/* ─── LOGIN FORM ─── */}
       <section className="py-16 px-6 bg-cream">
         <div className="max-w-md mx-auto">
-          {error && (
+          {queryError && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm"
             >
-              {error === 'invalid_credentials'
+              {queryError === 'invalid_credentials'
                 ? 'Invalid email or password. Please try again.'
-                : error === 'required'
+                : queryError === 'required'
                   ? 'Please fill in all required fields.'
-                  : 'An error occurred. Please try again.'}
+                  : queryError === 'access_denied'
+                    ? 'You denied the login request. Please try again if you changed your mind.'
+                    : `Error: ${queryError}`}
             </motion.div>
           )}
 
@@ -78,71 +98,27 @@ export default function LoginPage() {
             variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
             className="bg-cream-light/80 backdrop-blur-sm rounded-2xl border border-cream-dark/30 p-8 shadow-sm"
           >
-            <Form method="POST" action="/account/authorize" className="space-y-5">
-              <input type="hidden" name="redirect" value={redirectTo} />
+            {/* Shopify-hosted login button — links directly to authorize route */}
+            <motion.div variants={stagger}>
+              <Button
+                variant="primary"
+                size="lg"
+                className="w-full rounded-xl"
+                as="a"
+                href={`/account/authorize?redirect=${encodeURIComponent(redirectTo)}`}
+              >
+                <LogIn className="w-4 h-4" />
+                Sign in with Shopify
+              </Button>
+            </motion.div>
 
-              {/* Email */}
-              <motion.div variants={stagger}>
-                <label htmlFor="email" className="block text-sm font-medium text-forest/80 mb-1.5">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-forest/40" />
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    className="w-full h-12 pl-10 pr-4 rounded-xl border border-cream-dark/40 bg-white/60 text-forest placeholder:text-forest/30 text-sm focus:outline-none focus:border-clay/60 focus:ring-2 focus:ring-clay/20 transition-all"
-                  />
-                </div>
-              </motion.div>
-
-              {/* Password */}
-              <motion.div variants={stagger}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label htmlFor="password" className="block text-sm font-medium text-forest/80">
-                    Password
-                  </label>
-                  <Link
-                    to="/account/login?lost=password"
-                    className="text-xs text-clay hover:text-clay-dark transition-colors"
-                  >
-                    Forgot?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-forest/40" />
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    autoComplete="current-password"
-                    placeholder="Enter your password"
-                    className="w-full h-12 pl-10 pr-10 rounded-xl border border-cream-dark/40 bg-white/60 text-forest placeholder:text-forest/30 text-sm focus:outline-none focus:border-clay/60 focus:ring-2 focus:ring-clay/20 transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-forest/40 hover:text-forest/70 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </motion.div>
-
-              {/* Submit */}
-              <motion.div variants={stagger}>
-                <Button type="submit" variant="primary" size="lg" className="w-full rounded-xl">
-                  <LogIn className="w-4 h-4" />
-                  Sign In
-                </Button>
-              </motion.div>
-            </Form>
+            {/* Explanation */}
+            <motion.div variants={stagger} className="mt-4">
+              <p className="text-xs text-forest/50 text-center leading-relaxed">
+                You'll be redirected to Shopify's secure login page.
+                You can sign in with your email or use a social login.
+              </p>
+            </motion.div>
 
             {/* Divider */}
             <motion.div variants={stagger} className="relative my-6">
@@ -156,10 +132,21 @@ export default function LoginPage() {
 
             {/* Register */}
             <motion.div variants={stagger}>
-              <Button variant="secondary" size="lg" className="w-full rounded-xl" as="a" href="/account/register">
+              <Button
+                variant="secondary"
+                size="lg"
+                className="w-full rounded-xl"
+                as="a"
+                href={`/account/authorize?redirect=${encodeURIComponent(redirectTo)}`}
+              >
                 <Sparkles className="w-4 h-4" />
                 Create an Account
               </Button>
+            </motion.div>
+            <motion.div variants={stagger} className="mt-2">
+              <p className="text-xs text-forest/40 text-center">
+                Creating an account also happens via Shopify's secure login page.
+              </p>
             </motion.div>
           </motion.div>
 

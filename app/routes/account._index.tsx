@@ -1,10 +1,75 @@
-import { Link } from 'react-router';
+/**
+ * Account Index — Shows a welcome page with real customer data from Customer Account API.
+ */
+import type { LoaderFunctionArgs } from 'react-router';
+import { useLoaderData, Link, useRouteError, isRouteErrorResponse, redirect } from 'react-router';
 import { motion } from 'framer-motion';
-import { Package, MapPin, User, Clock, ArrowRight, ShoppingBag } from 'lucide-react';
+import { Package, MapPin, User, ShoppingBag } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
+import { ErrorPage } from '~/components/ErrorPage';
+import { getCustomerAccount, CUSTOMER_QUERIES } from '~/lib/customer';
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const url = new URL(request.url);
+
+  try {
+    const customer = await getCustomerAccount(request);
+    const isLoggedIn = await customer.isLoggedIn();
+
+    if (!isLoggedIn) {
+      // Auto-redirect to login page
+      const redirectTo = encodeURIComponent(url.pathname);
+      return redirect(`/account/login?redirect=${redirectTo}`);
+    }
+
+    const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_INFO);
+    const profile = (data as any)?.customer ?? null;
+
+    return {
+      customer: profile
+        ? {
+            firstName: profile.firstName || '',
+            lastName: profile.lastName || '',
+            email: profile.emailAddress?.emailAddress || '',
+          }
+        : null,
+    };
+  } catch (err) {
+    console.error('[account] Customer API error:', err);
+    const message = err instanceof Error ? err.message : String(err);
+    return new Response(
+      JSON.stringify({
+        title: 'Account Unavailable',
+        message: `Could not load your account: ${message}`,
+      }),
+      {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
+  }
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+
+  if (isRouteErrorResponse(error)) {
+    let message = 'Something went wrong.';
+    if (error.data?.message) {
+      message = error.data.message;
+    } else if (typeof error.data === 'string') {
+      message = error.data;
+    }
+    return <ErrorPage status={error.status} message={message} />;
+  }
+
+  return <ErrorPage status={400} message="An unexpected error occurred." />;
+}
 
 export default function AccountIndex() {
+  const { customer } = useLoaderData<typeof loader>();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -15,9 +80,13 @@ export default function AccountIndex() {
       {/* Welcome */}
       <Card>
         <CardHeader>
-          <CardTitle>Welcome back</CardTitle>
+          <CardTitle>
+            Welcome back{customer?.firstName ? `, ${customer.firstName}` : ''}
+          </CardTitle>
           <CardDescription>
-            Manage your account, view orders, and update your information.
+            {customer?.email
+              ? `Signed in as ${customer.email}`
+              : 'Manage your account, view orders, and update your information.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -46,21 +115,18 @@ export default function AccountIndex() {
             title: 'Orders',
             desc: 'Track, return, or buy again',
             href: '/account/orders',
-            count: '0',
           },
           {
             icon: MapPin,
             title: 'Addresses',
             desc: 'Manage shipping addresses',
             href: '/account/addresses',
-            count: '0',
           },
           {
             icon: User,
             title: 'Profile',
             desc: 'Name, email, and password',
             href: '/account/profile',
-            count: '',
           },
         ].map((item, i) => (
           <motion.div
@@ -80,12 +146,6 @@ export default function AccountIndex() {
                 {item.title}
               </h3>
               <p className="text-xs text-forest/50">{item.desc}</p>
-              {item.count !== '' && (
-                <div className="flex items-center gap-1.5 mt-2">
-                  <Clock className="w-3 h-3 text-forest/30" />
-                  <span className="text-xs text-forest/40">{item.count} items</span>
-                </div>
-              )}
             </Link>
           </motion.div>
         ))}

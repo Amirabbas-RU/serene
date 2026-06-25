@@ -1,10 +1,28 @@
-import { Link } from 'react-router';
+/**
+ * Account Orders — Displays real order history from Customer Account API.
+ */
+import type { LoaderFunctionArgs } from 'react-router';
+import { useLoaderData, Link } from 'react-router';
 import { motion } from 'framer-motion';
-import { Package, Clock, ArrowRight, ShoppingBag } from 'lucide-react';
+import { Package, ShoppingBag, ArrowRight } from 'lucide-react';
 import { Button } from '~/components/ui/button';
+import { requireCustomer, CUSTOMER_QUERIES } from '~/lib/customer';
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const customer = await requireCustomer({ request } as LoaderFunctionArgs);
+
+  const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_WITH_ORDERS, {
+    variables: { first: 20 },
+  });
+  const customerData = (data as any)?.customer ?? null;
+
+  return {
+    orders: customerData?.orders?.nodes ?? [],
+  };
+}
 
 export default function AccountOrders() {
-  const orders: any[] = [];
+  const { orders } = useLoaderData<typeof loader>();
 
   return (
     <motion.div
@@ -18,7 +36,7 @@ export default function AccountOrders() {
 
       {orders.length > 0 ? (
         <div className="space-y-4">
-          {orders.map((order, i) => (
+          {orders.map((order: any, i: number) => (
             <motion.div
               key={order.id}
               initial={{ opacity: 0, y: 12 }}
@@ -35,7 +53,9 @@ export default function AccountOrders() {
                       <Package className="w-5 h-5 text-clay" />
                     </div>
                     <div>
-                      <p className="font-medium text-forest text-sm">#{order.orderNumber}</p>
+                      <p className="font-medium text-forest text-sm">
+                        #{order.orderNumber}
+                      </p>
                       <p className="text-xs text-forest/50">
                         {new Date(order.processedAt).toLocaleDateString('en-US', {
                           year: 'numeric',
@@ -52,7 +72,9 @@ export default function AccountOrders() {
                         currency: order.totalPrice?.currencyCode ?? 'USD',
                       }).format(parseFloat(order.totalPrice?.amount ?? '0'))}
                     </p>
-                    <p className="text-xs text-forest/50">{order.fulfillmentStatus}</p>
+                    <p className="text-xs text-forest/50">
+                      {order.fulfillmentStatus}
+                    </p>
                   </div>
                 </div>
               </Link>

@@ -18,6 +18,7 @@ import {
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import { cn } from '~/lib/utils';
+import { klaviyo } from '~/lib/klaviyo-client';
 import { getStorefrontClient } from '~/lib/storefront';
 import { useCart } from '~/lib/cart-context';
 
@@ -498,6 +499,25 @@ export default function ProductDetailPage() {
   const [wishlisted, setWishlisted] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const { addItem } = useCart();
+
+  // Track product view for Klaviyo
+  useEffect(() => {
+    if (!product) return;
+    klaviyo.trackViewedProduct({
+      ProductID: product.id,
+      Name: product.title,
+      Categories: product.collections?.nodes?.map((c: any) => c.title),
+      ImageURL: product.featuredImage?.url ?? product.images?.nodes?.[0]?.url ?? undefined,
+      URL: typeof window !== 'undefined' ? window.location.href : undefined,
+      Brand: product.vendor ?? undefined,
+      Price: product.priceRange?.minVariantPrice?.amount
+        ? parseFloat(product.priceRange.minVariantPrice.amount)
+        : undefined,
+      CompareAtPrice: product.compareAtPriceRange?.minVariantPrice?.amount
+        ? parseFloat(product.compareAtPriceRange.minVariantPrice.amount)
+        : undefined,
+    });
+  }, [product?.id]);
 
   // Initialize selected options from first available variant
   const variants = product?.variants?.nodes ?? [];

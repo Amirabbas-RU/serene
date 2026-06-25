@@ -73,7 +73,7 @@ const itemVariants = {
 
 export default function CartPage() {
   const {} = useLoaderData<typeof loader>();
-  const { items, totalQuantity, subtotal, updateQuantity, removeItem, clearCart } = useCart();
+  const { items, totalQuantity, subtotal, updateQuantity, removeItem, clearCart, checkout } = useCart();
   const isEmpty = items.length === 0;
 
   return (
@@ -327,6 +327,7 @@ export default function CartPage() {
                         variant="primary"
                         size="lg"
                         className="w-full rounded-xl"
+                        onClick={checkout}
                       >
                         Proceed to Checkout
                         <ChevronRight className="w-4 h-4" />

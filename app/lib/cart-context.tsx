@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { klaviyo } from '~/lib/klaviyo-client';
 
 /* ─── Types ─── */
 
@@ -37,6 +38,8 @@ interface CartContextValue extends CartState {
   updateQuantity: (id: string, quantity: number) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
+  /** Redirect to Shopify checkout with current cart items */
+  checkout: () => void;
   /** True once hydration is complete */
   hydrated: boolean;
 }
@@ -130,16 +133,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, hydrated]);
 
   const addItem = useCallback((newItem: Omit<CartItem, 'id' | 'quantity'> & { quantity?: number }) => {
+    const qty = newItem.quantity ?? 1;
     setItems((prev) => {
-      const qty = newItem.quantity ?? 1;
       // Check if this variant already exists in cart
       const existingIndex = prev.findIndex((item) => item.variantId === newItem.variantId);
+      const newQuantity = existingIndex >= 0 ? prev[existingIndex].quantity + qty : qty;
+
+      // Fire Klaviyo event
+      klaviyo.trackAddedToCart({
+        ProductID: newItem.variantId,
+        Name: newItem.title,
+        ImageURL: newItem.imageUrl ?? undefined,
+        URL: typeof window !== 'undefined' ? `${window.location.origin}/products/${newItem.handle}` : undefined,
+        Price: newItem.price ? parseFloat(newItem.price.amount) : undefined,
+        Quantity: newQuantity,
+      });
+
       if (existingIndex >= 0) {
         // Increment quantity
         const updated = [...prev];
         updated[existingIndex] = {
           ...updated[existingIndex],
-          quantity: updated[existingIndex].quantity + qty,
+          quantity: newQuantity,
         };
         return updated;
       }
@@ -171,6 +186,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     deleteCookie(CART_COOKIE);
   }, []);
 
+  /** Serialize cart items and redirect to Shopify checkout */
+  const checkout = useCallback(() => {
+    if (items.length === 0) return;
+    const payload = items.map((item) => ({
+      variantId: item.variantId,
+      quantity: item.quantity,
+    }));
+    klaviyo.trackStartedCheckout(payload);
+    const encoded = encodeURIComponent(JSON.stringify(payload));
+    window.location.href = `/checkout?items=${encoded}`;
+  }, [items]);
+
   const { totalQuantity, subtotal } = computeTotal(items);
 
   const value: CartContextValue = {
@@ -181,6 +208,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     updateQuantity,
     removeItem,
     clearCart,
+    checkout,
     hydrated,
   };
 
