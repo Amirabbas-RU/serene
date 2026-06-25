@@ -31,6 +31,7 @@ interface Product {
   handle?: string;
   available?: boolean;
   id?: string;
+  variantId?: string | null;
 }
 
 interface ProductCardProps {
@@ -117,8 +118,10 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
   const handleAddToCart = () => {
     if (!product.available) return;
+    const vid = product.variantId || product.id;
+    if (!vid) return;
     addItem({
-      variantId: product.id ?? `variant_${product.handle}`,
+      variantId: vid,
       title: product.title,
       handle: product.handle ?? '',
       variantTitle: 'Default Title',

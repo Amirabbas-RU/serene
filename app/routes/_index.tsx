@@ -55,6 +55,11 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
           height
         }
         tags
+        variants(first: 1) {
+          nodes {
+            id
+          }
+        }
       }
     }
   }
@@ -441,6 +446,7 @@ export default function HomePage() {
                     featuredImage: product.featuredImage,
                     tags: product.tags,
                     available: product.availableForSale,
+                    variantId: product.variants?.nodes?.[0]?.id ?? null,
                   }}
                   index={i}
                 />
