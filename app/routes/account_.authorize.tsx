@@ -28,7 +28,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
       });
       const result = await customer.authorize();
       if (result instanceof Response) return result;
-      return redirect(url.searchParams.get('redirect') || '/account');
+
+      // ⚠️ Hydrogen's authorize() stores the access token in the session
+      // but NEVER calls session.commit(). Commit manually so the cookie
+      // with the auth tokens reaches the browser.
+      const cookieHeader = await session.commit();
+      const target = url.searchParams.get('redirect') || '/account';
+      if (cookieHeader) {
+        const headers = new Headers();
+        headers.set('Location', target);
+        headers.set('Set-Cookie', cookieHeader);
+        return new Response(null, { status: 302, headers });
+      }
+      return redirect(target);
     }
 
     // Initiate OAuth — redirect to Shopify's hosted login
