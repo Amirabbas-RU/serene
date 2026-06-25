@@ -35,6 +35,7 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
         title
         handle
         vendor
+        availableForSale
         priceRange {
           minVariantPrice {
             amount
