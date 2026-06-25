@@ -55,6 +55,7 @@ export const CUSTOMER_QUERIES = {
     query CustomerInfo {
       customer {
         id
+        displayName
         firstName
         lastName
         emailAddress { emailAddress }
@@ -69,17 +70,16 @@ export const CUSTOMER_QUERIES = {
         firstName
         lastName
         emailAddress { emailAddress }
-        numberOfOrders
         orders(first: $first) {
           nodes {
             id
-            orderNumber
+            number
             processedAt
             totalPrice { amount currencyCode }
             fulfillmentStatus
             financialStatus
             lineItems(first: 10) {
-              nodes { title quantity image { url altText } }
+              nodes { title quantity }
             }
           }
         }

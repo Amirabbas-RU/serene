@@ -35,7 +35,7 @@ export function ErrorBoundary() {
 export default function AccountOrderDetail() {
   const { orders } = useLoaderData<typeof loader>();
   const { id } = useParams();
-  const order = orders.find((o: any) => String(o.orderNumber) === id);
+  const order = orders.find((o: any) => String(o.number) === id);
 
   if (!order) {
     return (
@@ -60,7 +60,7 @@ export default function AccountOrderDetail() {
         Back to Orders
       </a>
 
-      <h2 className="font-heading text-2xl text-forest mb-6">Order #{order.orderNumber}</h2>
+      <h2 className="font-heading text-2xl text-forest mb-6">Order #{order.number}</h2>
 
       <div className="grid sm:grid-cols-2 gap-6">
         <div className="p-5 rounded-xl bg-cream-light/80 border border-cream-dark/30">
@@ -93,9 +93,6 @@ export default function AccountOrderDetail() {
           <div className="space-y-3">
             {order.lineItems.nodes.map((item: any) => (
               <div key={item.title} className="flex items-center gap-4 p-3 rounded-xl bg-cream-light/80 border border-cream-dark/20">
-                {item.image?.url && (
-                  <img src={item.image.url} alt={item.image.altText || item.title} className="w-12 h-12 rounded-lg object-cover" />
-                )}
                 <div>
                   <p className="text-sm font-medium text-forest">{item.title}</p>
                   <p className="text-xs text-forest/50">Qty: {item.quantity}</p>

@@ -19,7 +19,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return { orders: customerData?.orders?.nodes ?? [] };
   } catch (err) {
     if (err instanceof Response) throw err;
-    throw new Response('Failed to load orders', { status: 400 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[orders] Error:', msg);
+    throw new Response(msg, { status: 400 });
   }
 }
 
@@ -55,7 +57,7 @@ export default function AccountOrders() {
               transition={{ delay: i * 0.05 }}
             >
               <Link
-                to={`/account/orders/${order.orderNumber}`}
+                to={`/account/orders/${order.number}`}
                 className="block p-5 rounded-xl bg-cream-light/80 border border-cream-dark/30 hover:border-clay/30 hover:shadow-sm transition-all duration-300"
               >
                 <div className="flex items-center justify-between gap-4">
@@ -65,7 +67,7 @@ export default function AccountOrders() {
                     </div>
                     <div>
                       <p className="font-medium text-forest text-sm">
-                        #{order.orderNumber}
+                        #{order.number}
                       </p>
                       <p className="text-xs text-forest/50">
                         {new Date(order.processedAt).toLocaleDateString('en-US', {

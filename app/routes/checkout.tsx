@@ -1,6 +1,8 @@
 /**
  * Checkout Route — Creates a Shopify checkout cart from client-side cart items
  * and redirects to the Shopify checkout page.
+ *
+ * v8_middleware: must `return` the Response, never `throw`.
  */
 import { redirect, type LoaderFunctionArgs } from 'react-router';
 import { getStorefrontClient } from '~/lib/storefront';
@@ -25,24 +27,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const itemsRaw = url.searchParams.get('items');
   const returnUrl = url.searchParams.get('return') || '/';
 
-  if (!itemsRaw) {
-    throw new Error('No cart items provided');
-  }
+  // Redirect back if no items or empty array
+  if (!itemsRaw) return redirect('/cart');
+  if (itemsRaw === '[]' || itemsRaw === encodeURIComponent('[]')) return redirect(returnUrl);
 
   let items: { variantId: string; quantity: number }[];
   try {
-    items = JSON.parse(itemsRaw);
+    items = JSON.parse(decodeURIComponent(itemsRaw));
   } catch {
-    throw new Error('Invalid items format');
+    return redirect('/cart');
   }
 
   if (!Array.isArray(items) || items.length === 0) {
-    throw redirect(returnUrl);
+    return redirect(returnUrl);
   }
 
   const client = getStorefrontClient();
 
-  // Build storefront cart input — ensure IDs are fully qualified
   const lines = items.map((item) => ({
     merchandiseId: item.variantId.startsWith('gid://')
       ? item.variantId
@@ -50,26 +51,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
     quantity: item.quantity,
   }));
 
-  const result = await client.query(CART_CREATE_MUTATION, {
-    variables: {
-      input: { lines },
-    },
-  });
+  try {
+    const result = await client.query(CART_CREATE_MUTATION, {
+      variables: {
+        input: { lines },
+      },
+    });
 
-  const checkoutUrl = (result as any)?.cartCreate?.cart?.checkoutUrl;
-  const errors = (result as any)?.cartCreate?.userErrors;
+    const checkoutUrl = (result as any)?.cartCreate?.cart?.checkoutUrl;
 
-  if (errors && errors.length > 0) {
-    throw new Error(
-      `Shopify cart errors: ${errors.map((e: any) => e.message).join(', ')}`,
-    );
+    if (!checkoutUrl) {
+      console.error('[checkout] No checkoutUrl in response');
+      return redirect('/cart?error=checkout_failed');
+    }
+
+    return redirect(checkoutUrl);
+  } catch (err) {
+    console.error('[checkout] Error creating cart:', err);
+    return redirect('/cart?error=checkout_failed');
   }
-
-  if (!checkoutUrl) {
-    throw new Error('Failed to create checkout');
-  }
-
-  throw redirect(checkoutUrl);
 }
 
 export default function CheckoutRoute() {
