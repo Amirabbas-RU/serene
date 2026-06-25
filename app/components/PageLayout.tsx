@@ -30,7 +30,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
       <MobileMenu open={mobileOpen} onClose={closeMobile} />
 
       {/* ─────── Main Content ─────── */}
-      <main className="flex-1">
+      <main className="flex-1 pt-16 md:pt-20">
         {children ?? <Outlet />}
       </main>
 

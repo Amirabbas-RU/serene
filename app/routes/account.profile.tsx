@@ -40,13 +40,15 @@ export function ErrorBoundary() {
   return <ErrorPage status={400} message="An unexpected error occurred." />;
 }
 
-function getInitials(first: string, last: string): string {
-  return ((first?.[0] || '') + (last?.[0] || '')).toUpperCase() || '?';
+function getInitials(first: string, last: string, displayName: string): string {
+  if (first?.[0] || last?.[0]) return ((first?.[0] || '') + (last?.[0] || '')).toUpperCase();
+  if (displayName?.[0]) return displayName[0].toUpperCase();
+  return '?';
 }
 
 export default function AccountProfile() {
   const { firstName, lastName, email, phone, displayName } = useLoaderData<typeof loader>();
-  const initials = getInitials(firstName, lastName);
+  const initials = getInitials(firstName, lastName, displayName);
   const name = displayName || `${firstName} ${lastName}`.trim() || 'You';
 
   return (
