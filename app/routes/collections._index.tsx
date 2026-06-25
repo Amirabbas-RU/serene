@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
-import { getStorefrontClient } from '~/lib/storefront';
+import {storefrontQuery} from '~/lib/storefront';
 
 const COLLECTIONS_QUERY = `#graphql
   query Collections {
@@ -21,19 +21,13 @@ const COLLECTIONS_QUERY = `#graphql
           width
           height
         }
-        productsCount {
-          count
-        }
       }
     }
   }
 `;
 
 export async function loader({}: LoaderFunctionArgs) {
-    const storefront = getStorefrontClient();
-  const collections = await storefront.query(COLLECTIONS_QUERY, {
-    cache: storefront.CacheLong(),
-  });
+  const collections = await storefrontQuery(COLLECTIONS_QUERY);
   return { collections };
 }
 
@@ -73,16 +67,19 @@ export default function CollectionsPage() {
       {collectionNodes.length > 0 ? (
         <section className="py-20 px-6 bg-cream">
           <div className="max-w-7xl mx-auto">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {collectionNodes.map((collection: any, i: number) => (
-                <motion.a
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.4 }}
+              className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+            >
+              {collectionNodes.map((collection, i) => (
+                <a
                   key={collection.id}
                   href={`/collections/${collection.handle}`}
-                  initial={{ opacity: 0, y: 28 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }}
-                  className="group"
+                  className="group animate-fade-in-up"
+                  style={{ animationDelay: `${(i % 6) * 80}ms` }}
                 >
                   <div className="aspect-[16/10] rounded-2xl overflow-hidden bg-forest/5 mb-5 relative">
                     {collection.image ? (
@@ -114,16 +111,9 @@ export default function CollectionsPage() {
                     </div>
                     <ChevronRight className="w-5 h-5 text-forest/30 group-hover:text-clay group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
                   </div>
-
-                  {collection.productsCount?.count != null && (
-                    <p className="text-[11px] uppercase tracking-widest text-clay/60 mt-3">
-                      {collection.productsCount.count}{' '}
-                      {collection.productsCount.count === 1 ? 'Product' : 'Products'}
-                    </p>
-                  )}
-                </motion.a>
+                </a>
               ))}
-            </div>
+            </motion.div>
           </div>
         </section>
       ) : (

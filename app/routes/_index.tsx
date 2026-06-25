@@ -9,7 +9,7 @@ import { getStorefrontClient } from '~/lib/storefront';
 
 const HERO_QUERY = `#graphql
   query HeroContent {
-    collections(first: 3, query: "collection_type:smart") {
+    collections(first: 3) {
       nodes {
         id
         title
@@ -180,10 +180,10 @@ export default function HomePage() {
               </motion.p>
 
               <motion.div {...staggerItem(0.36)} className="flex flex-wrap gap-4">
-                <Button variant="primary" size="lg" className="rounded-full">
+                <Button variant="primary" size="lg" className="rounded-full" href="/collections/all">
                   Shop Now <ArrowRight className="w-4 h-4" />
                 </Button>
-                <Button variant="outline-light" size="lg" className="rounded-full">
+                <Button variant="outline-light" size="lg" className="rounded-full" href="/collections">
                   Explore Collections
                 </Button>
               </motion.div>

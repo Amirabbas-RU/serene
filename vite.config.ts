@@ -11,7 +11,15 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     hydrogen(),
-    reactRouter(),
+    reactRouter({
+      future: {
+        v8_passThroughRequests: true,
+        v8_trailingSlashAwareDataRequests: true,
+        v8_middleware: true,
+        v8_splitRouteModules: true,
+        v8_viteEnvironmentApi: true,
+      },
+    }),
   ],
   resolve: {
     alias: {

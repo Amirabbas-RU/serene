@@ -33,6 +33,7 @@ export default function Header({ mobileOpen, onToggleMobile, onCloseMobile }: He
   const location = useLocation();
   const isHome = location.pathname === '/';
   const { totalQuantity } = useCart();
+  const textLight = isHome && !scrolled;
 
   useEffect(() => {
     onCloseMobile();
@@ -51,13 +52,12 @@ export default function Header({ mobileOpen, onToggleMobile, onCloseMobile }: He
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b',
         isHome
           ? cn(
-              'text-white border-white/10',
               scrolled
-                ? 'bg-cream/12 backdrop-blur-16'
-                : 'glass-dark',
+                ? 'text-forest bg-cream/90 backdrop-blur-16 border-forest/10'
+                : 'text-white glass-dark border-white/10',
             )
           : cn(
-              'text-forest border-forest/10 shadow-sm',
+              'text-forest border-forest/10',
               scrolled
                 ? 'bg-cream/90 backdrop-blur-16'
                 : 'glass',
@@ -71,7 +71,7 @@ export default function Header({ mobileOpen, onToggleMobile, onCloseMobile }: He
             onClick={onToggleMobile}
             className={cn(
               'lg:hidden -ml-2 p-2.5 rounded-xl transition-all duration-200',
-              isHome
+              textLight
                 ? 'text-white hover:bg-white/[0.12] active:bg-white/[0.18]'
                 : 'text-forest hover:bg-forest/[0.06] active:bg-forest/[0.10]',
             )}
@@ -85,7 +85,7 @@ export default function Header({ mobileOpen, onToggleMobile, onCloseMobile }: He
             to="/"
             className={cn(
               'text-2xl font-heading font-bold tracking-wide flex-shrink-0',
-              isHome ? 'text-white' : 'text-forest',
+              textLight ? 'text-white' : 'text-forest',
             )}
           >
             SERENE
@@ -101,7 +101,7 @@ export default function Header({ mobileOpen, onToggleMobile, onCloseMobile }: He
                   'relative text-sm font-medium tracking-wide transition-colors duration-200',
                   'after:absolute after:bottom-[-2px] after:left-0 after:h-[2px] after:w-0',
                   'after:bg-current after:transition-all after:duration-300 hover:after:w-full',
-                  isHome
+                  textLight
                     ? 'text-white/80 hover:text-white'
                     : 'text-forest/70 hover:text-forest',
                 )}
@@ -117,7 +117,7 @@ export default function Header({ mobileOpen, onToggleMobile, onCloseMobile }: He
               to="/search"
               className={cn(
                 'p-2.5 rounded-xl transition-colors',
-                isHome
+                textLight
                   ? 'text-white/70 hover:text-white hover:bg-white/10'
                   : 'text-forest/60 hover:text-forest hover:bg-forest/5',
               )}
@@ -129,7 +129,7 @@ export default function Header({ mobileOpen, onToggleMobile, onCloseMobile }: He
               to="/account"
               className={cn(
                 'p-2.5 rounded-xl transition-colors hidden sm:flex',
-                isHome
+                textLight
                   ? 'text-white/70 hover:text-white hover:bg-white/10'
                   : 'text-forest/60 hover:text-forest hover:bg-forest/5',
               )}
@@ -141,7 +141,7 @@ export default function Header({ mobileOpen, onToggleMobile, onCloseMobile }: He
               to="/cart"
               className={cn(
                 'relative p-2.5 rounded-xl transition-colors',
-                isHome
+                textLight
                   ? 'text-white/70 hover:text-white hover:bg-white/10'
                   : 'text-forest/60 hover:text-forest hover:bg-forest/5',
               )}
@@ -163,7 +163,7 @@ export default function Header({ mobileOpen, onToggleMobile, onCloseMobile }: He
         className={cn(
           'absolute bottom-0 left-0 right-0 h-px transition-opacity duration-500',
           scrolled ? 'opacity-0' : 'opacity-100',
-          isHome
+          textLight
             ? 'bg-gradient-to-r from-transparent via-white/30 to-transparent'
             : 'bg-gradient-to-r from-transparent via-forest/20 to-transparent',
         )}

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Heart, ShoppingCart, Check } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
@@ -133,12 +132,9 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   };
 
   return (
-    <motion.div
-      className="group/card relative"
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.5, ease: 'easeOut', delay: index * 0.08 }}
+    <div
+      className="group/card relative animate-fade-in-up"
+      style={{ animationDelay: `${(index % 12) * 60}ms` }}
     >
       {/* ─────── Image Container ─────── */}
       <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-cream-dark/30">
@@ -261,6 +257,6 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           )}
         </Button>
       </div>
-    </motion.div>
+    </div>
   );
 }

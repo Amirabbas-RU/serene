@@ -50,6 +50,10 @@ export default [
   /* ─── Discount ─── */
   route('discount/:code', 'routes/discount.$code.tsx'),
 
+  /* ─── Debug ─── */
+  route('debug/products', 'routes/debug.products.tsx'),
+  route('debug/env', 'routes/debug.env.tsx'),
+
   /* ─── Sitemap & Robots ─── */
   route('robots.txt', 'routes/[robots.txt].tsx'),
   route('sitemap.xml', 'routes/[sitemap.xml].tsx'),

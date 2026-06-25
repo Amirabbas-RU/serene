@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Grid3X3, SlidersHorizontal, ArrowRight } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
-import { getStorefrontClient } from '~/lib/storefront';
+import {storefrontQuery} from '~/lib/storefront';
 
 const ALL_PRODUCTS_QUERY = `#graphql
   query AllProducts($first: Int) {
@@ -58,11 +58,9 @@ const COLLECTIONS_QUERY = `#graphql
 `;
 
 export async function loader({}: LoaderFunctionArgs) {
-    const storefront = getStorefrontClient();
-
   const [products, collections] = await Promise.all([
-    storefront.query(ALL_PRODUCTS_QUERY, { variables: { first: 24 }, cache: storefront.CacheLong() }),
-    storefront.query(COLLECTIONS_QUERY, { cache: storefront.CacheLong() }),
+    storefrontQuery(ALL_PRODUCTS_QUERY, { variables: { first: 24 } }),
+    storefrontQuery(COLLECTIONS_QUERY),
   ]);
 
   return { products, collections };
@@ -129,16 +127,19 @@ export default function ShopPage() {
       {productNodes.length > 0 ? (
         <section className="px-6 pb-24">
           <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              {productNodes.map((product: any, i: number) => (
-                <motion.a
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.4 }}
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mt-8"
+            >
+              {productNodes.map((product, i) => (
+                <a
                   key={product.id}
                   href={`/products/${product.handle}`}
-                  initial={{ opacity: 0, y: 28 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-50px' }}
-                  transition={{ delay: i * 0.05, duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }}
-                  className="group"
+                  className="group animate-fade-in-up"
+                  style={{ animationDelay: `${(i % 12) * 60}ms` }}
                 >
                   {/* Image */}
                   <div className="aspect-[4/5] rounded-xl overflow-hidden bg-forest/5 mb-3 relative">
@@ -217,9 +218,9 @@ export default function ShopPage() {
                       </p>
                     )}
                   </div>
-                </motion.a>
+                </a>
               ))}
-            </div>
+            </motion.div>
           </div>
         </section>
       ) : (
