@@ -22,6 +22,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       email: profile?.emailAddress?.emailAddress || '',
       phone: profile?.phoneNumber?.phoneNumber || '',
       displayName: profile?.displayName || '',
+      raw: JSON.stringify(data),
     };
   } catch (err) {
     if (err instanceof Response) throw err;
@@ -47,7 +48,7 @@ function getInitials(first: string, last: string, displayName: string): string {
 }
 
 export default function AccountProfile() {
-  const { firstName, lastName, email, phone, displayName } = useLoaderData<typeof loader>();
+  const { firstName, lastName, email, phone, displayName, raw } = useLoaderData<typeof loader>();
   const initials = getInitials(firstName, lastName, displayName);
   const name = displayName || `${firstName} ${lastName}`.trim() || 'You';
 
@@ -58,6 +59,12 @@ export default function AccountProfile() {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
+      {/* Debug raw data */}
+      <details className="text-xs text-forest/30">
+        <summary>Debug: Raw API data</summary>
+        <pre className="mt-2 p-2 bg-forest/5 rounded overflow-auto max-h-40">{raw}</pre>
+      </details>
+
       {/* Avatar + Name Header */}
       <Card>
         <CardContent className="pt-8 pb-6">

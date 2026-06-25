@@ -54,7 +54,7 @@ export default function Header({ mobileOpen, onToggleMobile, onCloseMobile }: He
           ? cn(
               scrolled
                 ? 'text-forest bg-cream/90 backdrop-blur-16 border-forest/10'
-                : 'text-white glass-dark border-white/10',
+                : 'text-white bg-forest/40 backdrop-blur-16 border-white/10',
             )
           : cn(
               'text-forest border-forest/10',
