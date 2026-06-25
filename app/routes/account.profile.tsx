@@ -4,17 +4,18 @@
 import type { LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, useRouteError, isRouteErrorResponse } from 'react-router';
 import { motion } from 'framer-motion';
-import { Mail, Phone, User, Calendar, Shield } from 'lucide-react';
+import { Mail, Phone, User, Shield } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { ErrorPage } from '~/components/ErrorPage';
-import { requireCustomer, CUSTOMER_QUERIES } from '~/lib/customer';
+import { queryCustomerData, CUSTOMER_QUERIES } from '~/lib/customer';
+import type { CustomerInfo } from '~/lib/shopify-types';
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
-    const customer = await requireCustomer({ request } as LoaderFunctionArgs);
-    const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_INFO);
-    const profile = (data as any)?.data?.customer ?? null;
-    console.log('[profile] Raw API response:', JSON.stringify(data));
+    const profile = await queryCustomerData<CustomerInfo>(
+      request,
+      CUSTOMER_QUERIES.CUSTOMER_INFO,
+    );
 
     return {
       firstName: profile?.firstName || '',
@@ -47,7 +48,7 @@ function getInitials(first: string, last: string, displayName: string): string {
 }
 
 export default function AccountProfile() {
-  const { firstName, lastName, email, phone, displayName, raw } = useLoaderData<typeof loader>();
+  const { firstName, lastName, email, phone, displayName } = useLoaderData<typeof loader>();
   const initials = getInitials(firstName, lastName, displayName);
   const name = displayName || `${firstName} ${lastName}`.trim() || 'You';
 

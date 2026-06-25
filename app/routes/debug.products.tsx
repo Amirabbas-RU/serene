@@ -1,6 +1,7 @@
 import type {LoaderFunctionArgs} from 'react-router';
 import {useLoaderData, Link} from 'react-router';
 import {getStorefrontClient} from '~/lib/storefront';
+import type { ShopifyProduct } from '~/lib/shopify-types';
 
 const ALL_PRODUCTS_QUERY = `#graphql
   query AllProducts {
@@ -97,7 +98,7 @@ export default function DebugProducts() {
         {/* Product Grid */}
         {products.length > 0 ? (
           <div className="grid gap-6">
-            {products.map((product: any) => (
+            {products.map((product: ShopifyProduct) => (
               <div
                 key={product.id}
                 className="flex gap-6 bg-gray-900/60 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition-colors"
@@ -178,14 +179,14 @@ export default function DebugProducts() {
                       Inventory:{' '}
                       <span
                         className={
-                          product.totalInventory > 0
+                          product.totalInventory != null && product.totalInventory > 0
                             ? 'text-green-500'
                             : product.availableForSale
                               ? 'text-yellow-500'
                               : 'text-red-500'
                         }
                       >
-                        {product.totalInventory > 0
+                        {product.totalInventory != null && product.totalInventory > 0
                           ? product.totalInventory
                           : product.availableForSale
                             ? 'Tracking off'

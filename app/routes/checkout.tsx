@@ -6,6 +6,7 @@
  */
 import { redirect, type LoaderFunctionArgs } from 'react-router';
 import { getStorefrontClient } from '~/lib/storefront';
+import type { CartCreateResponse } from '~/lib/shopify-types';
 
 const CART_CREATE_MUTATION = `#graphql
   mutation CartCreate($input: CartInput!) {
@@ -58,7 +59,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       },
     });
 
-    const checkoutUrl = (result as any)?.cartCreate?.cart?.checkoutUrl;
+    const checkoutUrl = (result as CartCreateResponse)?.cartCreate?.cart?.checkoutUrl;
 
     if (!checkoutUrl) {
       console.error('[checkout] No checkoutUrl in response');

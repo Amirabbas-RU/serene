@@ -14,6 +14,7 @@ export default [
   /* ─── Cart ─── */
   route('cart', 'routes/cart.tsx'),
   route('cart/:lines', 'routes/cart.$lines.tsx'),
+  route('checkout', 'routes/checkout.tsx'),
 
   /* ─── Search ─── */
   route('search', 'routes/search.tsx'),

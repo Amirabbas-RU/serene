@@ -13,6 +13,23 @@ let cache: TokenCache | null = null;
 
 const TOKEN_EXPIRY_MS = 23 * 60 * 60 * 1000; // refresh 1h before expiry
 
+/** Shape of the token endpoint response */
+interface TokenResponse {
+  access_token: string;
+}
+
+/** Shape of a GraphQL error in an API response */
+interface GraphQLError {
+  message: string;
+  [key: string]: unknown;
+}
+
+/** Shape of the raw Admin API response envelope */
+interface AdminApiResponse<TData> {
+  data?: TData | null;
+  errors?: GraphQLError[];
+}
+
 /**
  * Get a valid Admin API access token, auto-refreshing if expired.
  */
@@ -51,7 +68,7 @@ export async function getAdminToken(): Promise<string> {
     );
   }
 
-  const data = (await res.json()) as { access_token: string };
+  const data = (await res.json()) as TokenResponse;
 
   cache = {
     token: data.access_token,
@@ -65,9 +82,9 @@ export async function getAdminToken(): Promise<string> {
  * Execute a GraphQL query against the Shopify Admin API.
  * Uses the public Admin API endpoint.
  */
-export async function adminQuery<T = any>(
+export async function adminQuery<T = unknown>(
   query: string,
-  options?: { variables?: Record<string, any> },
+  options?: { variables?: Record<string, unknown> },
 ): Promise<T> {
   const domain = process.env.PUBLIC_STORE_DOMAIN;
   if (!domain) throw new Error('PUBLIC_STORE_DOMAIN not set');
@@ -94,10 +111,10 @@ export async function adminQuery<T = any>(
     throw new Error(`Admin API query failed (${res.status}): ${body}`);
   }
 
-  const json = await res.json();
+  const json: AdminApiResponse<T> = await res.json();
   if (json.errors) {
     throw new Error(
-      `Admin API errors: ${json.errors.map((e: any) => e.message).join(', ')}`,
+      `Admin API errors: ${json.errors.map((e) => e.message).join(', ')}`,
     );
   }
 

@@ -12,11 +12,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
     "paths": {
-      "~/*": ["app/*"],
-      "storefrontapi.generated": [".shopify/types/storefront.generated.d.ts"]
+      "~/*": ["./app/*"],
+      "storefrontapi.generated": ["./.shopify/types/storefront.generated.d.ts"]
     }
   },
   "include": ["app", "vite.config.ts"]

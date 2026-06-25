@@ -21,6 +21,7 @@ import { cn } from '~/lib/utils';
 import { klaviyo } from '~/lib/klaviyo-client';
 import { getStorefrontClient } from '~/lib/storefront';
 import { useCart } from '~/lib/cart-context';
+import type { ShopifyProduct } from '~/lib/shopify-types';
 
 /* ─── GraphQL Queries ─── */
 
@@ -214,6 +215,9 @@ interface Product {
   featuredImage?: ProductImage | null;
   images?: {
     nodes: ProductImage[];
+  } | null;
+  collections?: {
+    nodes: Array<{ title: string; handle: string }>;
   } | null;
   variants?: {
     nodes: Variant[];
@@ -492,7 +496,7 @@ function QuantitySelector({
 export default function ProductDetailPage() {
   const data = useLoaderData<typeof loader>();
   const product: Product | null = data?.product ?? null;
-  const relatedProducts: any[] = data?.relatedProducts ?? [];
+  const relatedProducts: ShopifyProduct[] = data?.relatedProducts ?? [];
 
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
@@ -506,7 +510,7 @@ export default function ProductDetailPage() {
     klaviyo.trackViewedProduct({
       ProductID: product.id,
       Name: product.title,
-      Categories: product.collections?.nodes?.map((c: any) => c.title),
+      Categories: product.collections?.nodes?.map((c) => c.title),
       ImageURL: product.featuredImage?.url ?? product.images?.nodes?.[0]?.url ?? undefined,
       URL: typeof window !== 'undefined' ? window.location.href : undefined,
       Brand: product.vendor ?? undefined,
@@ -842,7 +846,7 @@ export default function ProductDetailPage() {
             </motion.div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              {relatedProducts.map((rel: any, i: number) => (
+              {relatedProducts.map((rel: ShopifyProduct, i: number) => (
                 <motion.a
                   key={rel.id}
                   href={`/products/${rel.handle}`}

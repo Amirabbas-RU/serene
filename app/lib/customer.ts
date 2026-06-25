@@ -8,6 +8,7 @@
 import { createCustomerAccountClient } from '@shopify/hydrogen';
 import { redirect, type LoaderFunctionArgs } from 'react-router';
 import { createHydrogenSession } from './session';
+import type { CustomerAccountResponse } from './shopify-types';
 
 export async function createCustomerAccountClientWithSession(request: Request) {
   const session = await createHydrogenSession(
@@ -47,6 +48,17 @@ export async function requireCustomer(
     throw redirect(`/account/login?redirect=${encodeURIComponent(url.pathname)}`);
   }
   return customer;
+}
+
+/** Typed helper: queries Customer Account API and returns the customer data or null. */
+export async function queryCustomerData<T>(
+  request: Request,
+  query: string,
+  variables?: Record<string, unknown>,
+): Promise<T | null> {
+  const customer = await requireCustomer({ request } as LoaderFunctionArgs);
+  const raw = await customer.query(query, { variables });
+  return ((raw as CustomerAccountResponse<T>)?.data?.customer ?? null) as T | null;
 }
 
 /** Customer Account API GraphQL queries */

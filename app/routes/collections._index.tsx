@@ -5,6 +5,11 @@ import { ArrowRight, ChevronRight } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import {storefrontQuery} from '~/lib/storefront';
+import type { ShopifyCollection } from '~/lib/shopify-types';
+
+interface CollectionsQueryResult {
+  collections: { nodes: ShopifyCollection[] };
+}
 
 const COLLECTIONS_QUERY = `#graphql
   query Collections {
@@ -27,7 +32,7 @@ const COLLECTIONS_QUERY = `#graphql
 `;
 
 export async function loader({}: LoaderFunctionArgs) {
-  const collections = await storefrontQuery(COLLECTIONS_QUERY);
+  const collections = await storefrontQuery<CollectionsQueryResult>(COLLECTIONS_QUERY);
   return { collections };
 }
 

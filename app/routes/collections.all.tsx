@@ -5,6 +5,11 @@ import { Grid3X3, SlidersHorizontal, ArrowRight } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import {storefrontQuery} from '~/lib/storefront';
+import type { ShopifyProduct } from '~/lib/shopify-types';
+
+interface CollectionsQueryResult {
+  collections: { nodes: { id: string; title: string; handle: string }[] };
+}
 
 const ALL_PRODUCTS_QUERY = `#graphql
   query AllProducts($first: Int) {
@@ -59,8 +64,8 @@ const COLLECTIONS_QUERY = `#graphql
 
 export async function loader({}: LoaderFunctionArgs) {
   const [products, collections] = await Promise.all([
-    storefrontQuery(ALL_PRODUCTS_QUERY, { variables: { first: 24 } }),
-    storefrontQuery(COLLECTIONS_QUERY),
+    storefrontQuery<{ products: { nodes: ShopifyProduct[] } }>(ALL_PRODUCTS_QUERY, { variables: { first: 24 } }),
+    storefrontQuery<CollectionsQueryResult>(COLLECTIONS_QUERY),
   ]);
 
   return { products, collections };
@@ -68,7 +73,7 @@ export async function loader({}: LoaderFunctionArgs) {
 
 export default function ShopPage() {
   const { products, collections } = useLoaderData<typeof loader>();
-  const productNodes = products?.products?.nodes ?? [];
+  const productNodes: ShopifyProduct[] = products?.products?.nodes ?? [];
   const collectionNodes = collections?.collections?.nodes ?? [];
 
   return (
@@ -104,7 +109,7 @@ export default function ShopPage() {
                 <button className="text-xs font-medium px-3 py-1.5 rounded-full bg-forest text-cream transition-all">
                   All
                 </button>
-                {collectionNodes.map((col: any) => (
+                {collectionNodes.map((col, i) => (
                   <a
                     key={col.id}
                     href={`/collections/${col.handle}`}

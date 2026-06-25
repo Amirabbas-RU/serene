@@ -4,7 +4,9 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Grid3X3, ChevronRight } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
-import { getStorefrontClient } from '~/lib/storefront';
+import {getStorefrontClient} from '~/lib/storefront';
+import type { ShopifyProduct } from '~/lib/shopify-types';
+import type { ShopifyCollection } from '~/lib/shopify-types';
 
 const COLLECTION_QUERY = `#graphql
   query CollectionDetails($handle: String!, $first: Int) {
@@ -184,7 +186,7 @@ export default function CollectionDetailPage() {
               </motion.div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                {products.map((product: any, i: number) => (
+                {products.map((product: ShopifyProduct, i: number) => (
                   <motion.a
                     key={product.id}
                     href={`/products/${product.handle}`}

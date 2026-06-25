@@ -17,10 +17,10 @@ export function getStorefrontClient() {
 }
 
 /** Wrapper with automatic retry for transient API failures */
-export async function storefrontQuery(
+export async function storefrontQuery<T = unknown>(
   query: string,
-  options?: {variables?: Record<string, any>}
-) {
+  options?: {variables?: Record<string, unknown>},
+): Promise<T> {
   const client = getStorefrontClient();
 
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -28,10 +28,12 @@ export async function storefrontQuery(
       const result = await client.query(query, {
         variables: options?.variables,
       });
-      return result;
+      return result as T;
     } catch (e) {
       if (attempt === 2) throw e;
       await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
     }
   }
+
+  throw new Error('storefrontQuery: unreachable');
 }

@@ -8,13 +8,16 @@ import { MapPin, Plus } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { ErrorPage } from '~/components/ErrorPage';
-import { requireCustomer, CUSTOMER_QUERIES } from '~/lib/customer';
+import { queryCustomerData, CUSTOMER_QUERIES } from '~/lib/customer';
+import type { CustomerWithAddresses, CustomerAddress } from '~/lib/shopify-types';
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
-    const customer = await requireCustomer({ request } as LoaderFunctionArgs);
-    const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_ADDRESSES);
-    const customerData = (data as any)?.data?.customer ?? null;
+    const customerData = await queryCustomerData<CustomerWithAddresses>(
+      request,
+      CUSTOMER_QUERIES.CUSTOMER_ADDRESSES,
+    );
+
     return {
       defaultAddress: customerData?.defaultAddress ?? null,
       addresses: customerData?.addresses?.nodes ?? [],
@@ -53,7 +56,7 @@ export default function AccountAddresses() {
 
       {addresses.length > 0 ? (
         <div className="grid sm:grid-cols-2 gap-4">
-          {addresses.map((addr: any, i: number) => {
+          {addresses.map((addr: CustomerAddress, i: number) => {
             const isDefault = defaultAddress?.id === addr.id;
             return (
               <motion.div

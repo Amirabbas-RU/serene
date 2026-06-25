@@ -5,7 +5,8 @@ import { Search, X, ArrowRight, Package, SlidersHorizontal } from 'lucide-react'
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import { cn } from '~/lib/utils';
-import { getStorefrontClient } from '~/lib/storefront';
+import {getStorefrontClient} from '~/lib/storefront';
+import type { ShopifyProduct } from '~/lib/shopify-types';
 
 const SEARCH_PRODUCTS_QUERY = `#graphql
   query SearchProducts($first: Int, $query: String) {
@@ -159,7 +160,7 @@ export default function SearchPage() {
 
               {productNodes.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                  {productNodes.map((product: any, i: number) => (
+                  {productNodes.map((product: ShopifyProduct, i: number) => (
                     <motion.a
                       key={product.id}
                       href={`/products/${product.handle}`}

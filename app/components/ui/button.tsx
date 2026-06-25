@@ -35,35 +35,41 @@ const buttonVariants = cva(
       variant: 'primary',
       size: 'default',
     },
-  }
+  },
 );
 
-type ButtonOrLinkProps =
-  | ({ href?: never; as?: never } & ButtonHTMLAttributes<HTMLButtonElement>)
-  | ({ href: string; as?: 'a' } & AnchorHTMLAttributes<HTMLAnchorElement>);
+type Variants = VariantProps<typeof buttonVariants>;
 
-export interface ButtonProps
-  extends VariantProps<typeof buttonVariants> {
-  children?: ReactNode;
+// Button mode — <button> elements
+type ButtonMode = Variants & { href?: never } & Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  'className' | 'children' | keyof Variants
+>;
+
+// Link mode — <a> elements
+type LinkMode = Variants & { href: string } & Omit<
+  AnchorHTMLAttributes<HTMLAnchorElement>,
+  'className' | 'children' | keyof Variants
+>;
+
+export type ButtonProps = (ButtonMode | LinkMode) & {
   className?: string;
-  href?: string;
-  as?: 'a';
-  disabled?: boolean;
-  [key: string]: any;
-}
+  children?: ReactNode;
+  /** @deprecated Use href instead — component auto-detects link mode. */
+  as?: string;
+};
 
 const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(
-  ({ className, variant, size, href, as, children, ...props }, ref) => {
+  (props, ref) => {
+    const { className, variant, size, children, ...rest } = props;
     const classes = cn(buttonVariants({ variant, size, className }));
 
-    if (href) {
-      const { disabled, ...anchorProps } = props as any;
+    if ('href' in props && props.href) {
       return (
         <a
-          href={href}
+          ref={ref as React.Ref<HTMLAnchorElement>}
           className={classes}
-          ref={ref as any}
-          {...anchorProps}
+          {...(rest as Omit<LinkMode, keyof Variants>)}
         >
           {children}
         </a>
@@ -72,14 +78,14 @@ const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(
 
     return (
       <button
+        ref={ref as React.Ref<HTMLButtonElement>}
         className={classes}
-        ref={ref as any}
-        {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}
+        {...(rest as Omit<ButtonMode, keyof Variants>)}
       >
         {children}
       </button>
     );
-  }
+  },
 );
 Button.displayName = 'Button';
 

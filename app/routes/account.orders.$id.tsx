@@ -7,15 +7,17 @@ import { motion } from 'framer-motion';
 import { Package, ArrowLeft } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { ErrorPage } from '~/components/ErrorPage';
-import { requireCustomer, CUSTOMER_QUERIES } from '~/lib/customer';
+import { queryCustomerData, CUSTOMER_QUERIES } from '~/lib/customer';
+import type { CustomerWithOrders, CustomerOrder, CustomerOrderLineItem } from '~/lib/shopify-types';
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
-    const customer = await requireCustomer({ request } as LoaderFunctionArgs);
-    const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_WITH_ORDERS, {
-      variables: { first: 50 },
-    });
-    const customerData = (data as any)?.data?.customer ?? null;
+    const customerData = await queryCustomerData<CustomerWithOrders>(
+      request,
+      CUSTOMER_QUERIES.CUSTOMER_WITH_ORDERS,
+      { first: 50 },
+    );
+
     return { orders: customerData?.orders?.nodes ?? [] };
   } catch (err) {
     if (err instanceof Response) throw err;
@@ -35,7 +37,7 @@ export function ErrorBoundary() {
 export default function AccountOrderDetail() {
   const { orders } = useLoaderData<typeof loader>();
   const { id } = useParams();
-  const order = orders.find((o: any) => String(o.number) === id);
+  const order = orders.find((o: CustomerOrder) => String(o.number) === id);
 
   if (!order) {
     return (
@@ -91,7 +93,7 @@ export default function AccountOrderDetail() {
         <div className="mt-6">
           <h3 className="font-heading text-lg text-forest mb-4">Items</h3>
           <div className="space-y-3">
-            {order.lineItems.nodes.map((item: any) => (
+            {order.lineItems.nodes.map((item: CustomerOrderLineItem) => (
               <div key={item.title} className="flex items-center gap-4 p-3 rounded-xl bg-cream-light/80 border border-cream-dark/20">
                 <div>
                   <p className="text-sm font-medium text-forest">{item.title}</p>

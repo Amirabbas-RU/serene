@@ -1,3 +1,4 @@
+import type { ShopifyProduct, ShopifyCollection } from '~/lib/shopify-types';
 import type { LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, Form } from 'react-router';
 import { motion } from 'framer-motion';
@@ -341,7 +342,7 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-3 gap-8">
             {collections.length > 0 ? (
-              collections.map((col: any, i: number) => (
+              collections.map((col: ShopifyCollection, i: number) => (
                 <motion.a
                   key={col.id}
                   href={`/collections/${col.handle}`}
@@ -427,7 +428,7 @@ export default function HomePage() {
 
           {products.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              {products.map((product: any, i: number) => (
+              {products.map((product: ShopifyProduct, i: number) => (
                 <ProductCard
                   key={product.id}
                   product={{

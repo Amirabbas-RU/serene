@@ -9,15 +9,16 @@ import { Package, MapPin, User, ShoppingBag, ChevronRight } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { ErrorPage } from '~/components/ErrorPage';
-import { requireCustomer, CUSTOMER_QUERIES } from '~/lib/customer';
+import { queryCustomerData, CUSTOMER_QUERIES } from '~/lib/customer';
+import type { CustomerWithOrders, CustomerOrder } from '~/lib/shopify-types';
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
-    const customer = await requireCustomer({ request } as LoaderFunctionArgs);
-    const data = await customer.query(CUSTOMER_QUERIES.CUSTOMER_WITH_ORDERS, {
-      variables: { first: 5 },
-    });
-    const customerData = (data as any)?.data?.customer ?? null;
+    const customerData = await queryCustomerData<CustomerWithOrders>(
+      request,
+      CUSTOMER_QUERIES.CUSTOMER_WITH_ORDERS,
+      { first: 5 },
+    );
 
     const profile = customerData
       ? {
@@ -105,9 +106,9 @@ export default function AccountIndex() {
       {/* Quick Links Grid */}
       <div className="grid sm:grid-cols-3 gap-4">
         {[
-          { icon: Package, title: 'Orders', desc: 'Track, return, or buy again', href: '/account/orders', count: recentOrders.length },
-          { icon: MapPin, title: 'Addresses', desc: 'Manage shipping addresses', href: '/account/addresses' },
-          { icon: User, title: 'Profile', desc: 'Name, email, and password', href: '/account/profile' },
+          {icon: Package, title: 'Orders', desc: 'Track, return, or buy again', href: '/account/orders', count: recentOrders.length } as const,
+          { icon: MapPin, title: 'Addresses', desc: 'Manage shipping addresses', href: '/account/addresses' } as const,
+          { icon: User, title: 'Profile', desc: 'Name, email, and password', href: '/account/profile' } as const,
         ].map((item, i) => (
           <motion.div
             key={item.title}
@@ -119,11 +120,11 @@ export default function AccountIndex() {
               to={item.href}
               className="group block p-6 rounded-2xl bg-cream-light/80 border border-cream-dark/30 hover:border-clay/30 hover:shadow-md transition-all duration-300 relative overflow-hidden"
             >
-              {(item as any).count !== undefined && (
-                <span className="absolute top-3 right-3 text-xs bg-clay/10 text-clay px-2 py-0.5 rounded-full font-medium">
-                  {(item as any).count}
-                </span>
-              )}
+              {item.count !== undefined && (
+                  <span className="absolute top-3 right-3 text-xs bg-clay/10 text-clay px-2 py-0.5 rounded-full font-medium">
+                    {item.count}
+                  </span>
+                )}
               <div className="w-10 h-10 rounded-xl bg-clay/10 flex items-center justify-center mb-4 group-hover:bg-clay/20 transition-colors">
                 <item.icon className="w-5 h-5 text-clay" />
               </div>
@@ -151,7 +152,7 @@ export default function AccountIndex() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-0 divide-y divide-cream-dark/20">
-            {recentOrders.slice(0, 3).map((order: any) => (
+            {recentOrders.slice(0, 3).map((order: CustomerOrder) => (
               <Link
                 key={order.id}
                 to={`/account/orders/${order.number}`}

@@ -1,8 +1,13 @@
 import type {LoaderFunctionArgs} from 'react-router';
 import {useLoaderData} from 'react-router';
 
+interface DebugResults {
+  processEnv: Record<string, string | undefined>;
+  apiTest: Record<string, unknown>;
+}
+
 export async function loader({}: LoaderFunctionArgs) {
-  const results: Record<string, any> = {};
+  const results: Record<string, unknown> = {};
 
   // Check process.env
   results.processEnv = {
@@ -14,15 +19,16 @@ export async function loader({}: LoaderFunctionArgs) {
   try {
     const {getStorefrontClient} = await import('~/lib/storefront');
     const client = getStorefrontClient();
-    const result = await client.query(`{ products(first: 2) { nodes { id title vendor } } }`);
+    const result: Record<string, unknown> = await client.query(`{ products(first: 2) { nodes { id title vendor } } }`);
+    const products = (result?.products as Record<string, unknown> | undefined)?.nodes ?? [];
     results.apiTest = {
       success: true,
-      products: result?.products?.nodes ?? [],
+      products,
     };
-  } catch (e: any) {
+  } catch (e) {
     results.apiTest = {
       success: false,
-      error: e?.message ?? String(e),
+      error: e instanceof Error ? e.message : String(e),
     };
   }
 
