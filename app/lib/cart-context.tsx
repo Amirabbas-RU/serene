@@ -1,29 +1,19 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { klaviyo } from '~/lib/klaviyo-client';
 
-/* ─── Types ─── */
-
 export interface CartItem {
-  /** Unique line ID (generated) */
   id: string;
-  /** Storefront variant ID */
   variantId: string;
-  /** Product title */
+  productId: string;
   title: string;
-  /** Product handle for linking */
   handle: string;
-  /** Variant title (e.g. "Small / Black") */
   variantTitle: string;
-  /** Unit price */
   price: {
     amount: string;
     currencyCode: string;
   };
-  /** Quantity */
   quantity: number;
-  /** Product image URL */
   imageUrl: string | null;
-  /** Alt text for image */
   imageAlt: string | null;
 }
 
@@ -38,18 +28,12 @@ interface CartContextValue extends CartState {
   updateQuantity: (id: string, quantity: number) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
-  /** Redirect to Shopify checkout with current cart items */
   checkout: () => void;
-  /** True once hydration is complete */
   hydrated: boolean;
 }
 
-/* ─── Constants ─── */
-
 const CART_COOKIE = 'serene_cart';
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
-
-/* ─── Cookie helpers ─── */
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
 function getCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
@@ -66,8 +50,6 @@ function deleteCookie(name: string) {
   if (typeof document === 'undefined') return;
   document.cookie = `${name}=;path=/;max-age=0`;
 }
-
-/* ─── Serialization ─── */
 
 function serializeCart(items: CartItem[]): string {
   return JSON.stringify(items);
@@ -89,8 +71,6 @@ function deserializeCart(raw: string): CartItem[] {
   }
 }
 
-/* ─── Helpers ─── */
-
 function computeTotal(items: CartItem[]): { totalQuantity: number; subtotal: { amount: string; currencyCode: string } } {
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
   const currencyCode = items.length > 0 ? items[0].price.currencyCode : 'USD';
@@ -100,17 +80,12 @@ function computeTotal(items: CartItem[]): { totalQuantity: number; subtotal: { a
   return { totalQuantity, subtotal: { amount, currencyCode } };
 }
 
-/* ─── Context ─── */
-
 const CartContext = createContext<CartContextValue | null>(null);
-
-/* ─── Provider ─── */
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
-  // Hydrate from cookie on mount
   useEffect(() => {
     const raw = getCookie(CART_COOKIE);
     if (raw) {
@@ -122,7 +97,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setHydrated(true);
   }, []);
 
-  // Persist to cookie when items change (after hydration)
   useEffect(() => {
     if (!hydrated) return;
     if (items.length === 0) {
@@ -135,13 +109,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback((newItem: Omit<CartItem, 'id' | 'quantity'> & { quantity?: number }) => {
     const qty = newItem.quantity ?? 1;
     setItems((prev) => {
-      // Check if this variant already exists in cart
       const existingIndex = prev.findIndex((item) => item.variantId === newItem.variantId);
       const newQuantity = existingIndex >= 0 ? prev[existingIndex].quantity + qty : qty;
 
-      // Fire Klaviyo event
       klaviyo.trackAddedToCart({
-        ProductID: newItem.variantId,
+        ProductID: newItem.productId,
         Name: newItem.title,
         ImageURL: newItem.imageUrl ?? undefined,
         URL: typeof window !== 'undefined' ? `${window.location.origin}/products/${newItem.handle}` : undefined,
@@ -150,7 +122,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       });
 
       if (existingIndex >= 0) {
-        // Increment quantity
         const updated = [...prev];
         updated[existingIndex] = {
           ...updated[existingIndex],
@@ -158,7 +129,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         };
         return updated;
       }
-      // Add new line item
       return [
         ...prev,
         {
@@ -186,7 +156,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     deleteCookie(CART_COOKIE);
   }, []);
 
-  /** Serialize cart items and redirect to Shopify checkout */
   const checkout = useCallback(() => {
     if (items.length === 0) return;
     const payload = items.map((item) => ({
@@ -214,8 +183,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
-
-/* ─── Hook ─── */
 
 export function useCart(): CartContextValue {
   const ctx = useContext(CartContext);

@@ -5,8 +5,6 @@ import { Button } from '~/components/ui/button';
 import { useCart } from '~/lib/cart-context';
 import type { CartItem } from '~/lib/cart-context';
 
-/* ─── Types ─── */
-
 interface ProductImage {
   url: string;
   altText?: string | null;
@@ -39,8 +37,6 @@ interface ProductCardProps {
   index?: number;
 }
 
-/* ─── Helpers ─── */
-
 function formatPrice(
   price: string | number | ProductPrice | undefined,
 ): string {
@@ -72,8 +68,6 @@ function isOnSale(product: Product): boolean {
   return compare > current && compare > 0;
 }
 
-/* ─── Badge Logic ─── */
-
 function getBadges(product: Product): Array<{ label: string; className: string }> {
   const tags = product.tags ?? [];
   const badges: Array<{ label: string; className: string }> = [];
@@ -93,7 +87,6 @@ function getBadges(product: Product): Array<{ label: string; className: string }
   return badges;
 }
 
-/** Extract price as CartItem['price'] */
 function toCartPrice(price: string | number | ProductPrice | undefined): CartItem['price'] {
   if (price == null) return { amount: '0.00', currencyCode: 'USD' };
   if (typeof price === 'object' && 'amount' in price) {
@@ -102,8 +95,6 @@ function toCartPrice(price: string | number | ProductPrice | undefined): CartIte
   const amount = (typeof price === 'string' ? parseFloat(price) : (price as number)).toFixed(2);
   return { amount, currencyCode: 'USD' };
 }
-
-/* ─── Component ─── */
 
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [wishlisted, setWishlisted] = useState(false);
@@ -122,6 +113,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
     if (!vid) return;
     addItem({
       variantId: vid,
+      productId: product.id ?? '',
       title: product.title,
       handle: product.handle ?? '',
       variantTitle: 'Default Title',
@@ -139,7 +131,6 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
       className="group/card relative animate-fade-in-up"
       style={{ animationDelay: `${(index % 12) * 60}ms` }}
     >
-      {/* ─────── Image Container ─────── */}
       <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-cream-dark/30">
         {image ? (
           <img
@@ -154,7 +145,6 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           </div>
         )}
 
-        {/* ───── Quick-view Overlay ───── */}
         <a
           href={product.handle ? `/products/${product.handle}` : '#'}
           className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[2px] opacity-0 transition-all duration-300 group-hover/card:opacity-100"
@@ -167,7 +157,6 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           </span>
         </a>
 
-        {/* ───── Badges ───── */}
         {badges.length > 0 && (
           <div className="absolute left-3 top-3 flex flex-col gap-1.5">
             {badges.map((badge) => (
@@ -184,7 +173,6 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           </div>
         )}
 
-        {/* ───── Wishlist Heart ───── */}
         <button
           type="button"
           aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
@@ -203,16 +191,13 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         </button>
       </div>
 
-      {/* ─────── Content ─────── */}
       <div className="mt-3 space-y-1 px-0.5">
-        {/* Vendor */}
         {product.vendor && (
           <p className="text-[11px] uppercase tracking-widest text-clay/70">
             {product.vendor}
           </p>
         )}
 
-        {/* Title */}
         <h3 className="font-heading text-base font-semibold leading-tight text-forest line-clamp-2">
           {product.handle ? (
             <a href={`/products/${product.handle}`} className="hover:underline decoration-clay/30 underline-offset-2">
@@ -223,7 +208,6 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           )}
         </h3>
 
-        {/* Price */}
         <div className="flex items-center gap-2">
           {saleActive && comparePrice ? (
             <>
@@ -236,7 +220,6 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         </div>
       </div>
 
-      {/* ─────── Add to Cart ─────── */}
       <div className="mt-3 translate-y-1 opacity-0 transition-all duration-300 group-hover/card:translate-y-0 group-hover/card:opacity-100">
         <Button
           variant="primary"

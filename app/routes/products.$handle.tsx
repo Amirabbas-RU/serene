@@ -23,8 +23,6 @@ import { getStorefrontClient } from '~/lib/storefront';
 import { useCart } from '~/lib/cart-context';
 import type { ShopifyProduct } from '~/lib/shopify-types';
 
-/* ─── GraphQL Queries ─── */
-
 const PRODUCT_QUERY = `#graphql
   query ProductByHandle($handle: String!) {
     productByHandle(handle: $handle) {
@@ -132,8 +130,6 @@ const RELATED_PRODUCTS_QUERY = `#graphql
   }
 `;
 
-/* ─── Loader ─── */
-
 export async function loader({ params }: LoaderFunctionArgs) {
   const storefront = getStorefrontClient();
   const { handle } = params;
@@ -162,8 +158,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
     return { product: null, relatedProducts: [] };
   }
 }
-
-/* ─── Types ─── */
 
 interface ProductImage {
   id?: string;
@@ -224,8 +218,6 @@ interface Product {
   } | null;
 }
 
-/* ─── Helpers ─── */
-
 function formatPrice(amount: string, currencyCode = 'USD'): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -285,8 +277,6 @@ function findMatchingVariant(
   );
 }
 
-/* ─── Animation presets ─── */
-
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 } as const,
@@ -300,8 +290,6 @@ const fadeUpDelayed = (delay: number) => ({
   viewport: { once: true, margin: '-40px' } as const,
   transition: { delay, duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
 });
-
-/* ─── Gallery Sub-component ─── */
 
 function ImageGallery({
   images,
@@ -329,7 +317,6 @@ function ImageGallery({
 
   return (
     <div className="space-y-4">
-      {/* Main hero image */}
       <motion.div
         key={selectedIndex}
         initial={{ opacity: 0, scale: 0.96 }}
@@ -355,7 +342,6 @@ function ImageGallery({
         )}
       </motion.div>
 
-      {/* Thumbnail strip — max 5 visible, scrollable for overflow */}
       {allImages.length > 1 && (
         <div className="flex gap-1.5 sm:gap-2.5 overflow-x-auto pb-1.5 scrollbar-none snap-x">
           {allImages.slice(0, MAX_VISIBLE).map((img, i) => (
@@ -379,7 +365,6 @@ function ImageGallery({
             </button>
           ))}
 
-          {/* "+N more" indicator — not a button, just visual */}
           {hasMore && (
             <span className="shrink-0 w-12 sm:w-[72px] h-12 sm:h-[72px] rounded-lg border-2 border-dashed border-forest/12 bg-cream-dark/20 flex items-center justify-center text-[11px] font-heading font-bold text-forest/25">
               +{allImages.length - MAX_VISIBLE}
@@ -390,8 +375,6 @@ function ImageGallery({
     </div>
   );
 }
-
-/* ─── Variant Picker Sub-component ─── */
 
 function VariantPicker({
   variants,
@@ -439,8 +422,6 @@ function VariantPicker({
     </div>
   );
 }
-
-/* ─── Quantity Selector Sub-component ─── */
 
 function QuantitySelector({
   quantity,
@@ -491,8 +472,6 @@ function QuantitySelector({
   );
 }
 
-/* ─── Main Page Component ─── */
-
 export default function ProductDetailPage() {
   const data = useLoaderData<typeof loader>();
   const product: Product | null = data?.product ?? null;
@@ -504,7 +483,6 @@ export default function ProductDetailPage() {
   const [addedToCart, setAddedToCart] = useState(false);
   const { addItem } = useCart();
 
-  // Track product view for Klaviyo
   useEffect(() => {
     if (!product) return;
     klaviyo.trackViewedProduct({
@@ -523,7 +501,6 @@ export default function ProductDetailPage() {
     });
   }, [product?.id]);
 
-  // Initialize selected options from first available variant
   const variants = product?.variants?.nodes ?? [];
   const optionsInitialized = useRef(false);
   useEffect(() => {
@@ -538,7 +515,6 @@ export default function ProductDetailPage() {
           break;
         }
       }
-      // If no available variant, just use the first variant's options
       if (Object.keys(initial).length === 0 && variants[0]) {
         for (const opt of variants[0].selectedOptions) {
           initial[opt.name] = opt.value;
@@ -565,11 +541,9 @@ export default function ProductDetailPage() {
   const productImages = product?.images?.nodes ?? [];
   const imagesExist = productImages.length > 0 || product?.featuredImage;
 
-  // If no product, show not-found state
   if (!product) {
     return (
       <div className="min-h-screen bg-cream">
-        {/* Page header */}
         <section className="pt-24 sm:pt-32 pb-16 px-4 sm:px-6 bg-gradient-to-b from-cream-dark/30 to-cream">
           <div className="max-w-7xl mx-auto">
             <motion.div
@@ -597,7 +571,6 @@ export default function ProductDetailPage() {
 
   return (
     <div className="bg-cream min-h-screen">
-      {/* ─── Page Header / Breadcrumb ─── */}
       <section className="pt-24 sm:pt-28 pb-6 sm:pb-8 px-4 sm:px-6 bg-gradient-to-b from-cream-dark/20 to-cream">
         <div className="max-w-7xl mx-auto">
           <motion.nav
@@ -619,7 +592,6 @@ export default function ProductDetailPage() {
             </span>
           </motion.nav>
 
-          {/* Back link (mobile) */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -637,11 +609,9 @@ export default function ProductDetailPage() {
         </div>
       </section>
 
-      {/* ─── Main Product Content ─── */}
       <section className="px-4 sm:px-6 pb-12 sm:pb-16">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-            {/* ── LEFT: Image Gallery ── */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -654,21 +624,18 @@ export default function ProductDetailPage() {
               />
             </motion.div>
 
-            {/* ── RIGHT: Product Details ── */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as const }}
               className="flex flex-col gap-4 sm:gap-6"
             >
-              {/* Vendor */}
               {product.vendor && (
                 <p className="text-xs uppercase tracking-widest text-clay/70">
                   {product.vendor}
                 </p>
               )}
 
-              {/* Title + Wishlist/Share actions */}
               <div className="flex items-start justify-between gap-4">
                 <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl text-forest leading-tight">
                   {product.title}
@@ -700,7 +667,6 @@ export default function ProductDetailPage() {
                 </div>
               </div>
 
-              {/* Price */}
               <div className="flex items-center gap-3">
                 <span className="font-heading text-2xl sm:text-3xl text-forest">
                   {currentPrice
@@ -719,7 +685,6 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              {/* Badges */}
               {badges.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {badges.map((badge) => (
@@ -730,10 +695,8 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              {/* Divider */}
               <div className="h-px bg-gradient-divider" />
 
-              {/* Description */}
               {product.descriptionHtml ? (
                 <div
                   className="text-forest/60 leading-relaxed text-sm max-w-full overflow-hidden [&_table]:block [&_table]:overflow-x-auto [&_img]:max-w-full [&_img]:h-auto [&_*]:max-w-full prose-a:text-clay prose-a:underline"
@@ -745,7 +708,6 @@ export default function ProductDetailPage() {
                 </p>
               ) : null}
 
-              {/* Variant Picker */}
               {variants.length > 0 && (
                 <VariantPicker
                   variants={variants}
@@ -754,7 +716,6 @@ export default function ProductDetailPage() {
                 />
               )}
 
-              {/* Quantity + Add to Cart */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-2">
                 <div className="flex justify-center sm:justify-start">
                   <QuantitySelector quantity={quantity} onChange={setQuantity} />
@@ -768,6 +729,7 @@ export default function ProductDetailPage() {
                     if (!matchingVariant) return;
                     addItem({
                       variantId: matchingVariant.id,
+                      productId: product.id,
                       title: product.title,
                       handle: product.handle,
                       variantTitle: matchingVariant.title,
@@ -791,7 +753,6 @@ export default function ProductDetailPage() {
                 </Button>
               </div>
 
-              {/* Trust Signals */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 pt-2">
                 <div className="flex items-center gap-3 rounded-xl bg-cream-dark/30 px-4 py-3">
                   <Truck className="h-4 w-4 text-clay shrink-0" />
@@ -820,7 +781,6 @@ export default function ProductDetailPage() {
         </div>
       </section>
 
-      {/* ─── Related Products ─── */}
       {relatedProducts.length > 0 && (
         <section className="py-16 sm:py-20 px-4 sm:px-6 bg-cream-dark/20">
           <div className="max-w-7xl mx-auto">
@@ -903,7 +863,6 @@ export default function ProductDetailPage() {
         </section>
       )}
 
-      {/* ─── Bottom CTA ─── */}
       <section className="py-16 sm:py-20 px-4 sm:px-6 bg-gradient-to-t from-cream-dark/30 to-cream">
         <div className="max-w-7xl mx-auto text-center">
           <motion.div

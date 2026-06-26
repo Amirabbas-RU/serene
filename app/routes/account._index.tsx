@@ -1,15 +1,13 @@
-/**
- * Account Index — Dashboard with customer data from Customer Account API.
- * Uses requireCustomer() which checks isLoggedIn() and redirects if unauthenticated.
- */
 import type { LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, Link, useRouteError, isRouteErrorResponse } from 'react-router';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Package, MapPin, User, ShoppingBag, ChevronRight } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { ErrorPage } from '~/components/ErrorPage';
 import { queryCustomerData, CUSTOMER_QUERIES } from '~/lib/customer';
+import { klaviyo } from '~/lib/klaviyo-client';
 import type { CustomerWithOrders, CustomerOrder } from '~/lib/shopify-types';
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -53,6 +51,13 @@ export function ErrorBoundary() {
 
 export default function AccountIndex() {
   const { customer, recentOrders } = useLoaderData<typeof loader>();
+
+  useEffect(() => {
+    if (customer?.email) {
+      klaviyo.identify(customer.email);
+    }
+  }, [customer?.email]);
+
   const initials = customer
     ? ((customer.firstName?.[0] || '') + (customer.lastName?.[0] || '')).toUpperCase() || '?'
     : '?';
@@ -64,7 +69,6 @@ export default function AccountIndex() {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      {/* Welcome */}
       <Card>
         <CardContent className="pt-8 pb-6">
           <div className="flex items-center gap-5">
@@ -103,7 +107,6 @@ export default function AccountIndex() {
         </CardContent>
       </Card>
 
-      {/* Quick Links Grid */}
       <div className="grid sm:grid-cols-3 gap-4">
         {[
           {icon: Package, title: 'Orders', desc: 'Track, return, or buy again', href: '/account/orders', count: recentOrders.length } as const,
@@ -137,7 +140,6 @@ export default function AccountIndex() {
         ))}
       </div>
 
-      {/* Recent Orders */}
       {recentOrders.length > 0 && (
         <Card>
           <CardHeader>
@@ -187,7 +189,6 @@ export default function AccountIndex() {
         </Card>
       )}
 
-      {/* Empty state */}
       {recentOrders.length === 0 && (
         <Card>
           <CardContent className="py-8 text-center">
