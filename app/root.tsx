@@ -11,6 +11,8 @@ import {
 import { RootErrorBoundary } from "~/components/ErrorPage";
 import PageLayout from "~/components/PageLayout";
 import { CartProvider } from "~/lib/cart-context";
+import { ConsentProvider } from "~/lib/consent";
+import { ConsentBanner, ConsentPreferences } from "~/components/ConsentBanner";
 import { klaviyo } from "~/lib/klaviyo-client";
 import "~/styles/app.css";
 
@@ -52,26 +54,54 @@ export const meta: MetaFunction = () => [
   { name: "twitter:card", content: "summary" },
 ];
 
-export default function Root() {
-  const location = useLocation();
+// ─── Consent Mode v2 — default denied (must run before any tag) ──
+const CONSENT_DEFAULT_SCRIPT = `
+(function(){
+  window.dataLayer=window.dataLayer||[];
+  function gtag(){dataLayer.push(arguments)}
+  window.gtag=window.gtag||gtag;
+  gtag('consent','default',{
+    ad_storage:'denied',
+    ad_user_data:'denied',
+    ad_personalization:'denied',
+    analytics_storage:'denied',
+    functionality_storage:'denied',
+    personalization_storage:'denied',
+    security_storage:'granted',
+    wait_for_update:500
+  });
+  gtag('set','ads_data_redaction',true);
+  gtag('set','url_passthrough',true);
+})();
+`.trim();
 
+export default function Root() {
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* Consent Mode v2 defaults — must be earliest script */}
+        <script
+          id="serene-consent-default"
+          dangerouslySetInnerHTML={{ __html: CONSENT_DEFAULT_SCRIPT }}
+        />
         <Meta />
         <Links />
       </head>
       <body>
-        <CartProvider>
-          <PageLayout>
-            <Outlet />
-          </PageLayout>
-        </CartProvider>
+        <ConsentProvider>
+          <CartProvider>
+            <PageLayout>
+              <Outlet />
+            </PageLayout>
+          </CartProvider>
+          <ConsentBanner />
+          <ConsentPreferences />
+          <KlaviyoIdentify />
+        </ConsentProvider>
         <ScrollRestoration />
         <Scripts />
-        <KlaviyoIdentify />
       </body>
     </html>
   );
@@ -81,6 +111,7 @@ function KlaviyoIdentify() {
   const location = useLocation();
 
   useEffect(() => {
+    // Gated inside klaviyo-client — only injects script when marketing consent granted
     klaviyo.load("WkDKeF");
   }, []);
 
@@ -92,11 +123,7 @@ function KlaviyoIdentify() {
       klaviyo.identify(email);
       const url = new URL(window.location.href);
       url.searchParams.delete("klaviyo_email");
-      window.history.replaceState(
-        null,
-        "",
-        url.pathname + url.search + url.hash,
-      );
+      window.history.replaceState(null, "", url.pathname + url.search + url.hash);
     }
   }, [location.search]);
 

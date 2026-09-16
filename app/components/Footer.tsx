@@ -4,10 +4,11 @@ import {
   Instagram,
   Youtube,
   ArrowRight,
+  Settings2,
 } from 'lucide-react';
 import { Link } from 'react-router';
-import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
+import { useConsent } from '~/lib/consent';
 
 const SHOP_LINKS = [
   { label: 'All Products', href: '/collections/all' },
@@ -32,6 +33,7 @@ const SOCIAL_LINKS = [
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const { openPreferences } = useConsent();
 
   return (
     <footer className="bg-forest text-cream/80">
@@ -147,19 +149,37 @@ export default function Footer() {
           <p className="text-xs text-cream/40">
             &copy; {currentYear} SERENE. All rights reserved.
           </p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <Link
+              id="serene-footer-privacy-policy"
               to="/policies/privacy-policy"
               className="text-xs text-cream/40 hover:text-clay transition-colors"
             >
               Privacy Policy
             </Link>
             <Link
+              id="serene-footer-cookie-policy"
+              to="/policies/cookie-policy"
+              className="text-xs text-cream/40 hover:text-clay transition-colors"
+            >
+              Cookie Policy
+            </Link>
+            <Link
+              id="serene-footer-terms"
               to="/policies/terms-of-service"
               className="text-xs text-cream/40 hover:text-clay transition-colors"
             >
               Terms of Service
             </Link>
+            <button
+              id="serene-consent-manage"
+              type="button"
+              onClick={openPreferences}
+              className="inline-flex items-center gap-1.5 text-xs text-cream/40 hover:text-clay transition-colors"
+            >
+              <Settings2 className="h-3 w-3" />
+              Cookie preferences
+            </button>
           </div>
         </div>
       </div>
