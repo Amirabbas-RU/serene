@@ -174,6 +174,7 @@ interface ConsentContextValue {
   consent: ConsentState;
   decided: boolean;
   hydrated: boolean;
+  bannerReady: boolean;
   showBanner: boolean;
   showPreferences: boolean;
   acceptAll: () => void;
@@ -186,10 +187,14 @@ interface ConsentContextValue {
 
 const ConsentContext = createContext<ConsentContextValue | null>(null);
 
+/** Delay in ms before showing the consent banner after first visit */
+const BANNER_DELAY_MS = 5000;
+
 export function ConsentProvider({ children }: { children: ReactNode }) {
   const [consent, setConsent] = useState<ConsentState>(DEFAULT_CONSENT);
   const [decided, setDecided] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [bannerReady, setBannerReady] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
 
   // hydrate from storage + push default or stored consent to gtag
@@ -212,6 +217,10 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
       }
     }
     setHydrated(true);
+
+    // delay banner appearance for better UX — let page content load first
+    const timer = setTimeout(() => setBannerReady(true), BANNER_DELAY_MS);
+    return () => clearTimeout(timer);
   }, []);
 
   const acceptAll = useCallback(() => {
@@ -243,8 +252,8 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
   const closePreferences = useCallback(() => setShowPreferences(false), []);
   const dismissBanner = useCallback(() => setShowPreferences(true), []);
 
-  // banner visible only after hydrate + no decision yet + preferences not open
-  const showBanner = hydrated && !decided && !showPreferences;
+  // banner visible only after hydrate + 5s delay + no decision yet + preferences not open
+  const showBanner = hydrated && bannerReady && !decided && !showPreferences;
 
   return (
     <ConsentContext.Provider
@@ -252,6 +261,7 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
         consent,
         decided,
         hydrated,
+        bannerReady,
         showBanner,
         showPreferences,
         acceptAll,
