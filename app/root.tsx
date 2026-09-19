@@ -75,6 +75,17 @@ const CONSENT_DEFAULT_SCRIPT = `
 })();
 `.trim();
 
+// ─── Google Tag Manager — loads after consent defaults ──────────────
+const GTM_ID = "GTM-5QGZFJXQ";
+
+const GTM_HEAD_SCRIPT = `
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${GTM_ID}');
+`.trim();
+
 export default function Root() {
   return (
     <html lang="en">
@@ -86,10 +97,24 @@ export default function Root() {
           id="serene-consent-default"
           dangerouslySetInnerHTML={{ __html: CONSENT_DEFAULT_SCRIPT }}
         />
+        {/* Google Tag Manager — loads after consent defaults, inherits denied signals */}
+        <script
+          id="serene-gtm"
+          dangerouslySetInnerHTML={{ __html: GTM_HEAD_SCRIPT }}
+        />
         <Meta />
         <Links />
       </head>
       <body>
+        {/* Google Tag Manager noscript — fallback for JS-disabled browsers */}
+        <noscript id="serene-gtm-noscript">
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+          />
+        </noscript>
         <ConsentProvider>
           <CartProvider>
             <PageLayout>
