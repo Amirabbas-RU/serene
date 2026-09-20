@@ -14,6 +14,7 @@ import { CartProvider } from "~/lib/cart-context";
 import { ConsentProvider } from "~/lib/consent";
 import { ConsentBanner, ConsentPreferences } from "~/components/ConsentBanner";
 import { klaviyo } from "~/lib/klaviyo-client";
+import { adpersonam } from "~/lib/adpersonam-client";
 import "~/styles/app.css";
 
 export const ErrorBoundary = RootErrorBoundary;
@@ -124,6 +125,7 @@ export default function Root() {
           <ConsentBanner />
           <ConsentPreferences />
           <KlaviyoIdentify />
+          <AdpersonamPixel />
         </ConsentProvider>
         <ScrollRestoration />
         <Scripts />
@@ -151,6 +153,16 @@ function KlaviyoIdentify() {
       window.history.replaceState(null, "", url.pathname + url.search + url.hash);
     }
   }, [location.search]);
+
+  return null;
+}
+
+function AdpersonamPixel() {
+  useEffect(() => {
+    // Gated inside adpersonam-client — only loads the Universal Pixel when
+    // marketing consent is granted; page view + retargeting fire on load.
+    adpersonam.load();
+  }, []);
 
   return null;
 }
