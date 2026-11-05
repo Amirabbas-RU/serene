@@ -55,67 +55,29 @@ export const meta: MetaFunction = () => [
   { name: "twitter:card", content: "summary" },
 ];
 
-// ─── Consent Mode v2 — default denied (must run before any tag) ──
-const CONSENT_DEFAULT_SCRIPT = `
-(function(){
-  window.dataLayer=window.dataLayer||[];
-  function gtag(){dataLayer.push(arguments)}
-  window.gtag=window.gtag||gtag;
-  gtag('consent','default',{
-    ad_storage:'denied',
-    ad_user_data:'denied',
-    ad_personalization:'denied',
-    analytics_storage:'denied',
-    functionality_storage:'denied',
-    personalization_storage:'denied',
-    security_storage:'granted',
-    wait_for_update:500
-  });
-  gtag('set','ads_data_redaction',true);
-  gtag('set','url_passthrough',true);
-})();
-`.trim();
-
-// ─── Google Tag Manager — loads after consent defaults ──────────────
-const GTM_ID = "GTM-5QGZFJXQ";
-
-const GTM_HEAD_SCRIPT = `
-(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${GTM_ID}');
-`.trim();
-
 export default function Root() {
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {/* Consent Mode v2 defaults — must be earliest script */}
         <script
-          id="serene-consent-default"
-          dangerouslySetInnerHTML={{ __html: CONSENT_DEFAULT_SCRIPT }}
+          async
+          src="https://www.googletagmanager.com/gtm.js?id=GTM-N8529N3L"
         />
-        {/* Google Tag Manager — loads after consent defaults, inherits denied signals */}
         <script
-          id="serene-gtm"
-          dangerouslySetInnerHTML={{ __html: GTM_HEAD_SCRIPT }}
+          dangerouslySetInnerHTML={{
+            __html: `
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+`,
+          }}
         />
         <Meta />
         <Links />
       </head>
       <body>
-        {/* Google Tag Manager noscript — fallback for JS-disabled browsers */}
-        <noscript id="serene-gtm-noscript">
-          <iframe
-            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
-            height="0"
-            width="0"
-            style={{ display: "none", visibility: "hidden" }}
-          />
-        </noscript>
         <ConsentProvider>
           <CartProvider>
             <PageLayout>

@@ -110,49 +110,9 @@ function persist(state: ConsentState, decided: boolean) {
   try { localStorage.setItem(CONSENT_LS_KEY, json); } catch {}
 }
 
-// ─── Consent Mode v2 bridge ──────────────────────────────────────
-
-type GtagConsentParams = Record<string, string>;
-
-declare global {
-  interface Window {
-    dataLayer?: unknown[];
-    gtag?: (...args: unknown[]) => void;
-  }
-}
-
-function toGtagConsent(s: ConsentState): GtagConsentParams {
-  return {
-    ad_storage: s.marketing ? "granted" : "denied",
-    ad_user_data: s.marketing ? "granted" : "denied",
-    ad_personalization: s.marketing ? "granted" : "denied",
-    analytics_storage: s.analytics ? "granted" : "denied",
-    functionality_storage: s.preferences ? "granted" : "denied",
-    personalization_storage: s.preferences ? "granted" : "denied",
-    security_storage: "granted",
-  };
-}
-
-/** Push default (denied) before any tag loads — call inline in <head>. */
-export function gtagConsentDefault(): void {
+// ─── Consent broadcast ───────────────────────────────────────────
+export function broadcastConsentUpdate(s: ConsentState): void {
   if (typeof window === "undefined") return;
-  window.dataLayer = window.dataLayer || [];
-  window.gtag = window.gtag || function gtag(...args: unknown[]) {
-    (window.dataLayer as unknown[]).push(args);
-  };
-  window.gtag("consent", "default", {
-    ...toGtagConsent(ALL_DENIED),
-    wait_for_update: 500,
-  });
-  window.gtag("set", "ads_data_redaction", true);
-  window.gtag("set", "url_passthrough", true);
-}
-
-/** Push an update after user choice. */
-export function pushGtagConsentUpdate(s: ConsentState): void {
-  if (typeof window === "undefined") return;
-  window.gtag?.("consent", "update", toGtagConsent(s));
-  // also dispatch event for any listener (e.g. Klaviyo gate)
   window.dispatchEvent(new CustomEvent("serene:consent:update", { detail: s }));
 }
 
@@ -197,11 +157,8 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
   const [bannerReady, setBannerReady] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
 
-  // hydrate from storage + push default or stored consent to gtag
+  // hydrate from storage + broadcast stored consent
   useEffect(() => {
-    // ensure gtag stub exists + default denied is set
-    gtagConsentDefault();
-
     const stored = readStored();
     if (stored) {
       const s: ConsentState = {
@@ -213,7 +170,7 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
       setConsent(s);
       setDecided(stored.decided);
       if (stored.decided) {
-        pushGtagConsentUpdate(s);
+        broadcastConsentUpdate(s);
       }
     }
     setHydrated(true);
@@ -227,7 +184,7 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
     setConsent(ALL_GRANTED);
     setDecided(true);
     persist(ALL_GRANTED, true);
-    pushGtagConsentUpdate(ALL_GRANTED);
+    broadcastConsentUpdate(ALL_GRANTED);
     setShowPreferences(false);
   }, []);
 
@@ -235,7 +192,7 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
     setConsent(ALL_DENIED);
     setDecided(true);
     persist(ALL_DENIED, true);
-    pushGtagConsentUpdate(ALL_DENIED);
+    broadcastConsentUpdate(ALL_DENIED);
     setShowPreferences(false);
   }, []);
 
@@ -244,7 +201,7 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
     setConsent(normalized);
     setDecided(true);
     persist(normalized, true);
-    pushGtagConsentUpdate(normalized);
+    broadcastConsentUpdate(normalized);
     setShowPreferences(false);
   }, []);
 
